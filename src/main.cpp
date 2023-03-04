@@ -1,0 +1,205 @@
+//#include <GLUT/glut.h>
+//#include "core/SystemBus.h"
+//#include "core/Cartridge.h"
+//#include "core/NES.h"
+//
+//#include <string>
+//
+//GLuint glInitTexture(char* filename)
+//{
+//    GLuint t = 0;
+//
+//    glGenTextures( 1, &t );
+//    glBindTexture(GL_TEXTURE_2D, t);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//    unsigned char data[] = {
+//            255, 255, 0, 255,
+//            255, 0, 0, 255,
+//            0, 255, 0, 255,
+//            0, 0, 255, 255,
+//    };
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
+//    return t;
+//}
+//
+//void drawImage(GLuint file,
+//               float x,
+//               float y,
+//               float w,
+//               float h,
+//               float angle)
+//{
+//    //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+//    //glPushMatrix();
+//    //glTranslatef(x, y, 0.0);
+//    //glRotatef(angle, 0.0, 0.0, 1.0);
+//
+//    glBindTexture(GL_TEXTURE_2D, file);
+//    glEnable(GL_TEXTURE_2D);
+//
+//    glBegin(GL_QUADS);
+//    glTexCoord2f(0.0, 0.0); glVertex3f(x, y, 0.0f);
+//    glTexCoord2f(0.0, 1.0); glVertex3f(x, y + h, 0.0f);
+//    glTexCoord2f(1.0, 1.0); glVertex3f(x + w, y + h, 0.0f);
+//    glTexCoord2f(1.0, 0.0); glVertex3f(x + w, y, 0.0f);
+//    glEnd();
+//
+//    //glPopMatrix();
+//}
+//
+//GLuint texture;
+//void render()
+//{
+//    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    glEnable(GL_DEPTH_TEST);
+//
+//    glMatrixMode(GL_PROJECTION);
+//    glLoadIdentity();
+//    const double w = glutGet( GLUT_WINDOW_WIDTH );
+//    const double h = glutGet( GLUT_WINDOW_HEIGHT );
+//    gluPerspective(45.0, w / h, 0.1, 1000.0);
+//
+//    glMatrixMode(GL_MODELVIEW);
+//    glLoadIdentity();
+//    glTranslatef( 0, 0, -15 );
+//
+//    drawImage(texture, 0.0f, 0.0f, 10.0f, 10.0f, 0.0);
+//
+//    glutSwapBuffers();
+//}
+//
+//#include <olcPixelGameEngine.h>
+//
+//int main(int argc, char* argv[])
+//{
+//    NES nes;
+
+//
+//    nes.print_cpu_registers();
+//    for (int i = 0; i < 30; i++) {
+//        nes.step();
+//        nes.print_cpu_registers();
+//    }
+//
+//
+//    glutInit(&argc, argv);
+//    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+//    glutInitWindowSize(600, 600);
+//    glutCreateWindow("Applying Textures");
+//    glutDisplayFunc(render);
+//
+//    texture = glInitTexture("/Users/davide/CLionProjects/nessy/image.png");
+//
+//    glutMainLoop();
+//    return 0;
+//}
+
+#include "olcPixelGameEngine.h"
+#include "core/NES.h"
+#include "debug/ASM.h"
+
+class Example : public olc::PixelGameEngine {
+public:
+    NES nes;
+    ASM *code;
+
+    Example() {
+        sAppName = "Example";
+    }
+
+public:
+    bool OnUserCreate() override {
+        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+        nes.insert(cartridge);
+        code = ASM::decompile(&cartridge->prg);
+
+        return true;
+    }
+
+    void DrawCode(int x, int y) {
+        int i = 0;
+        for (auto &line: code->snippet(nes.cpu.prg_counter, 8)) {
+            DrawString(x, y + i * 10, line, i == 8 ? olc::WHITE : olc::GREY);
+            i++;
+        }
+    }
+
+    std::string hex(uint32_t n, uint8_t d) {
+        std::string s(d, '0');
+        for (int i = d - 1; i >= 0; i--, n >>= 4)
+            s[i] = "0123456789ABCDEF"[n & 0xF];
+        return s;
+    };
+
+    void DrawCPU(int x, int y) {
+        DrawString(x, y, "STATUS:", olc::WHITE);
+        DrawString(x + 64, y, "N", nes.cpu.get_status(C6502::Status::N) ? olc::GREEN : olc::RED);
+        DrawString(x + 80, y, "V", nes.cpu.get_status(C6502::Status::V) ? olc::GREEN : olc::RED);
+        DrawString(x + 96, y, "-", nes.cpu.get_status(C6502::Status::U) ? olc::GREEN : olc::RED);
+        DrawString(x + 112, y, "B", nes.cpu.get_status(C6502::Status::B) ? olc::GREEN : olc::RED);
+        DrawString(x + 128, y, "D", nes.cpu.get_status(C6502::Status::D) ? olc::GREEN : olc::RED);
+        DrawString(x + 144, y, "I", nes.cpu.get_status(C6502::Status::I) ? olc::GREEN : olc::RED);
+        DrawString(x + 160, y, "Z", nes.cpu.get_status(C6502::Status::Z) ? olc::GREEN : olc::RED);
+        DrawString(x + 178, y, "C", nes.cpu.get_status(C6502::Status::C) ? olc::GREEN : olc::RED);
+        DrawString(x, y + 10, "PC: $" + hex(nes.cpu.prg_counter, 4));
+        DrawString(x, y + 20, "A: $" + hex(nes.cpu.a, 2) + "  [" + std::to_string(nes.cpu.a) + "]");
+        DrawString(x, y + 30, "X: $" + hex(nes.cpu.x, 2) + "  [" + std::to_string(nes.cpu.x) + "]");
+        DrawString(x, y + 40, "Y: $" + hex(nes.cpu.y, 2) + "  [" + std::to_string(nes.cpu.y) + "]");
+        DrawString(x, y + 50, "Stack P: $" + hex(nes.cpu.stack_ptr, 4));
+    }
+
+    bool bEmulationRun = false;
+    float fResidualTime = 0;
+
+    bool OnUserUpdate(float fElapsedTime) override {
+        Clear(olc::DARK_BLUE);
+
+        if (bEmulationRun) {
+            if (fResidualTime > 0.0f)
+                fResidualTime -= fElapsedTime;
+            else {
+                fResidualTime += (1.0f / 60.0f) - fElapsedTime;
+                //do { nes.clock(); } while (!nes.ppu.frame_complete);
+                //nes.ppu.frame_complete = false;
+            }
+        } else {
+            // Emulate code step-by-step
+            if (GetKey(olc::Key::C).bPressed) {
+                nes.step();
+            }
+
+            // Emulate one whole frame
+//            if (GetKey(olc::Key::F).bPressed) {
+//                // Clock enough times to draw a single frame
+//                do { nes.clock(); } while (!nes.ppu.frame_complete);
+//                // Use residual clock cycles to complete current instruction
+//                do { nes.clock(); } while (!nes.cpu.complete());
+//                // Reset frame completion flag
+//                nes.ppu.frame_complete = false;
+//            }
+        }
+
+
+        if (GetKey(olc::Key::SPACE).bPressed) bEmulationRun = !bEmulationRun;
+        if (GetKey(olc::Key::R).bPressed) nes.reset();
+
+        DrawCPU(516, 25);
+        DrawCode(516, 100);
+
+//        DrawSprite(0, 0, &nes.ppu.GetScreen(), 2);
+        return true;
+    }
+};
+
+
+int main() {
+    Example demo;
+    int scale = 1;
+    if (demo.Construct(750, 480, scale, scale))
+        demo.Start();
+
+    return 0;
+}
