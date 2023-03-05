@@ -113,6 +113,7 @@ public:
 public:
     bool OnUserCreate() override {
         Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
+        //Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
         nes.insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
 
@@ -151,6 +152,19 @@ public:
         DrawString(x, y + 50, "Stack P: $" + hex(nes.cpu.stack_ptr, 4));
     }
 
+    void DrawPalettes(int x, int y) {
+        int so = 0;
+        for (int p = 0; p < 8; p++) {
+            for (int o = 0; o < 4; o++) {
+                const NESColor &c = nes.ppu.palettes.color_at(p, o);
+                olc::Pixel pc(c.r, c.g, c.b);
+                DrawString(x + so, y, "@", pc);
+                so += 8;
+            }
+            so += 2;
+        }
+    }
+
     bool bEmulationRun = false;
     float fResidualTime = 0;
 
@@ -182,8 +196,9 @@ public:
         if (GetKey(olc::Key::SPACE).bPressed) bEmulationRun = !bEmulationRun;
         if (GetKey(olc::Key::R).bPressed) nes.reset();
 
-        DrawCPU(516, 25);
-        DrawCode(516, 100);
+        DrawCPU(416, 25);
+        DrawCode(416, 100);
+        DrawPalettes(416, 280);
 
         if (frame) {
 

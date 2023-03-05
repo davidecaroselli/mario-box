@@ -9,6 +9,7 @@
 #include <utility>
 #include "SystemBus.h"
 #include "Logger.h"
+#include "Memory.h"
 
 class C6502;
 
@@ -62,6 +63,7 @@ public:
     uint8_t stack_ptr = 0x00;
 
     SystemBus bus;
+    Memory ram;
 
     [[nodiscard]] inline bool get_status(Status flag) const {
         return (status & flag) != 0;
@@ -74,7 +76,7 @@ public:
             status &= ~flag;
     }
 
-    C6502() : bus(SystemBus::MAIN_BUS_ID) {};
+    C6502();
 
     const uint8_t cycles() const {
         return cycles_;

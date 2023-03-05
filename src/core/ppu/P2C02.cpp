@@ -5,7 +5,9 @@
 #include "P2C02.h"
 #include "Logger.h"
 
-P2C02::P2C02() : bus(SystemBus::PPU_BUS_ID), frame_(Frame::create(256, 240)) {
+P2C02::P2C02() : bus(SystemBus::PPU_BUS_ID), frame_(Frame::create(256, 240)), name_tables(2048, 0x2000, 0x2FFF) {
+    bus.connect(&name_tables);
+    bus.connect(&palettes);
 }
 
 P2C02::~P2C02() {
@@ -21,8 +23,7 @@ uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {
             case 0x2001: // mask
                 break;
             case 0x2002: // status
-                //                           simulating dirty buffer on unused status bits
-                data = (status.reg & 0xE0) | (dma_data_buffer & 0x1F);
+                data = (status.reg & 0xE0) | (dma_data_buffer & 0x1F); // simulating dirty buffer on unused status bits
                 status.vertical_blank = 0;
                 dma_lsb_addr = false;
                 break;
@@ -85,6 +86,15 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
 
 void P2C02::clock() {
     frame_complete = false;
+
+    if (scanline == -1 && cycle == 1) {
+        status.vertical_blank = 0;
+    }
+
+    if (scanline == 241 && cycle == 1) {
+        status.vertical_blank = 1;
+        if (control.enable_nmi) nmi_ = true;
+    }
 
     //if 0 <= scanline && scanline < frame.height && cycle < frame.width  {
     //    frame.set(x: cycle, y: scanline, r: UInt8(drand48() * 255), g: UInt8(drand48() * 255), b: UInt8(drand48() * 255));

@@ -30,7 +30,7 @@ public:
 
     void bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) override;
 
-private:
+protected:
     const uint16_t begin;
     const uint16_t end;
     const uint16_t mask;

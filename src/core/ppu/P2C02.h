@@ -5,8 +5,10 @@
 #ifndef MARIOBOX_P2C02_H
 #define MARIOBOX_P2C02_H
 
-#include "SystemBus.h"
+#include "core/SystemBus.h"
 #include "graphics/Frame.h"
+#include "Palettes.h"
+#include "core/C6502.h"
 
 union ppustatus_t {
     struct {
@@ -49,6 +51,8 @@ union ppucontrol_t {
 class P2C02: public SBDevice {
 public:
     SystemBus bus;
+    Palettes palettes;
+    Memory name_tables;
 
     ppustatus_t status;
     ppumask_t mask;
@@ -57,6 +61,14 @@ public:
     P2C02();
 
     ~P2C02();
+
+    [[nodiscard]] bool nmi() const {
+        return nmi_;
+    }
+
+    void clear_nmi() {
+        nmi_ = true;
+    }
 
     [[nodiscard]] Frame *frame() const {
         return frame_;
@@ -90,6 +102,8 @@ private:
     uint8_t dma_data_buffer = 0;
     bool dma_lsb_addr = false;  // first read is for MSB
     uint16_t dma_addr = 0;
+
+    bool nmi_ = false;
 };
 
 

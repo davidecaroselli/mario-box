@@ -9,17 +9,13 @@
 #include <memory>
 #include "C6502.h"
 #include "Memory.h"
-#include "P2C02.h"
+#include "core/ppu/P2C02.h"
 #include "Cartridge.h"
 
 class NES {
 public:
     C6502 cpu;
-    Memory cpu_ram;
-
     P2C02 ppu;
-    Memory ppu_name_tables;
-    Memory ppu_palettes;
 
     std::shared_ptr<Cartridge> cartridge = nullptr;
 
@@ -30,14 +26,7 @@ public:
         ticks = 0;
     }
 
-    void clock() {
-        if (ticks % 3 == 0) {
-            cpu.clock();
-        }
-        ppu.clock();
-
-        ticks += 1;
-    }
+    void clock();
 
     Frame *next_frame() {
         do {

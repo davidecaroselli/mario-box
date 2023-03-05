@@ -6,6 +6,10 @@
 
 using namespace std;
 
+C6502::C6502(): bus(SystemBus::MAIN_BUS_ID), ram(2048, 0x0000, 0x1FFF) {
+    bus.connect(&ram);
+}
+
 void C6502::clock() {
     if (cycles_ == 0) {
         // parse instruction

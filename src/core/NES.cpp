@@ -4,15 +4,7 @@
 
 #include "NES.h"
 
-NES::NES()
-        : cpu_ram(2048, 0x0000, 0x1FFF),
-          ppu_name_tables(2048, 0x2000, 0x2FFF),
-          ppu_palettes(0xFF, 0x3F00, 0x3FFF) {
-    cpu.bus.connect(&cpu_ram);
-
-    ppu.bus.connect(&ppu_name_tables);
-    ppu.bus.connect(&ppu_palettes);
-
+NES::NES(){
     cpu.bus.connect(&ppu);
 }
 
@@ -23,4 +15,18 @@ void NES::step() {
     clock();
     clock();
     clock();
+}
+
+void NES::clock()  {
+    if (ticks % 3 == 0) {
+        cpu.clock();
+    }
+    ppu.clock();
+
+    if (ppu.nmi()) {
+        ppu.clear_nmi();
+        cpu.nmi();
+    }
+
+    ticks += 1;
 }
