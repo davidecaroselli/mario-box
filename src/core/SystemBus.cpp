@@ -3,6 +3,7 @@
 //
 
 #include "SystemBus.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -26,7 +27,7 @@ uint8_t SystemBus::read(uint16_t addr) {
         }
     }
 
-    printf("[WARN] SystemBus(%d): read, no device found at 0x%04X", id, addr);
+    Logger::warn("SystemBus(%d): read, no device found at 0x%04X", id, addr);
     return 0x00;
 }
 
@@ -38,5 +39,5 @@ void SystemBus::write(uint16_t addr, uint8_t val) {
         }
     }
 
-    printf("[WARN] SystemBus(%d): write, no device found at 0x%04X", id, addr);
+    Logger::warn("SystemBus(%d): write, no device found at 0x%04X", id, addr);
 }

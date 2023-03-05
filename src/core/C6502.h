@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 #include "SystemBus.h"
+#include "Logger.h"
 
 class C6502;
 
@@ -114,7 +115,7 @@ private:
 
     inline uint8_t fetch() {
         if (instruction->addrmode.name == "IMP") {
-            printf("invoked fetch() with Implied Addressing");
+            Logger::err("invoked fetch() with Implied Addressing");
             exit(1);
         }
 

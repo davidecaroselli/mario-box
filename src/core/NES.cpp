@@ -16,17 +16,6 @@ NES::NES()
     cpu.bus.connect(&ppu);
 }
 
-void NES::print_cpu_registers() {
-    printf("Register A: 0x%02X\n"
-           "Register X: 0x%02X\n"
-           "Register Y: 0x%02X\n"
-           "Stack: 0x%02X\n"
-           "Program counter: 0x%04X\n"
-           "Status: 0x%02X\n\n",
-           cpu.a, cpu.x, cpu.y, cpu.stack_ptr, cpu.prg_counter, cpu.status
-    );
-}
-
 void NES::step() {
     while (cpu.cycles() != 0) {
         clock();

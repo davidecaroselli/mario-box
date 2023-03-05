@@ -112,7 +112,7 @@ public:
 
 public:
     bool OnUserCreate() override {
-        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
         nes.insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
 
@@ -157,13 +157,14 @@ public:
     bool OnUserUpdate(float fElapsedTime) override {
         Clear(olc::DARK_BLUE);
 
+        Frame *frame = nullptr;
+
         if (bEmulationRun) {
             if (fResidualTime > 0.0f)
                 fResidualTime -= fElapsedTime;
             else {
                 fResidualTime += (1.0f / 60.0f) - fElapsedTime;
-                //do { nes.clock(); } while (!nes.ppu.frame_complete);
-                //nes.ppu.frame_complete = false;
+                frame = nes.next_frame();
             }
         } else {
             // Emulate code step-by-step
@@ -172,14 +173,9 @@ public:
             }
 
             // Emulate one whole frame
-//            if (GetKey(olc::Key::F).bPressed) {
-//                // Clock enough times to draw a single frame
-//                do { nes.clock(); } while (!nes.ppu.frame_complete);
-//                // Use residual clock cycles to complete current instruction
-//                do { nes.clock(); } while (!nes.cpu.complete());
-//                // Reset frame completion flag
-//                nes.ppu.frame_complete = false;
-//            }
+            if (GetKey(olc::Key::F).bPressed) {
+                frame = nes.next_frame();
+            }
         }
 
 
@@ -189,6 +185,9 @@ public:
         DrawCPU(516, 25);
         DrawCode(516, 100);
 
+        if (frame) {
+
+        }
 //        DrawSprite(0, 0, &nes.ppu.GetScreen(), 2);
         return true;
     }

@@ -39,13 +39,13 @@ public:
         ticks += 1;
     }
 
-//    func frame() -> Frame {
-//        repeat {
-//                clock();
-//        } while !ppu.isFrameComplete();
-//
-//        return ppu.frame;
-//    }
+    Frame *next_frame() {
+        do {
+            clock();
+        } while (!ppu.is_frame_complete());
+
+        return ppu.frame();
+    }
 
     void insert(Cartridge *crt) {
         if (this->cartridge) eject();
@@ -68,8 +68,6 @@ public:
     // - Debug utilities -----------------------------------------------------------------------------------------------
 
     void step();
-
-    void print_cpu_registers();
 
 private:
     uint64_t ticks = 0;

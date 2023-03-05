@@ -3,6 +3,7 @@
 //
 
 #include "Mapper.h"
+#include "Logger.h"
 
 class Mapper000: public Mapper {
 public:
@@ -23,7 +24,7 @@ Mapper *Mapper::create(uint8_t type, uint8_t prg_banks, uint8_t chr_banks) {
         case 0x00:
             return new Mapper000(prg_banks);
         default:
-            printf("unsupported mapper type %d", type);
+            Logger::err("unsupported mapper type %d", type);
             exit(2);
     }
 }

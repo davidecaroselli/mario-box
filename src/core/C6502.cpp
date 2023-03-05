@@ -12,7 +12,7 @@ void C6502::clock() {
         opcode = read_pc();
         instruction = const_cast<inst_t *>(&INSTRUCTIONS[opcode]);
         if (instruction->name == "???")
-            printf("[WARN] CPU: unexpected opcode %2X", opcode);
+            Logger::warn("CPU: unexpected opcode %2X", opcode);
 
         // set internal cycles_ counter
         cycles_ = instruction->cycles;
@@ -635,7 +635,7 @@ bool C6502::TAY() {
 }
 
 bool C6502::TSX() {
-    x = status;
+    x = pop();
     set_status(N, (status & 0x80) > 0);
     set_status(Z, status == 0x00);
     return false;
@@ -649,7 +649,7 @@ bool C6502::TXA() {
 }
 
 bool C6502::TXS() {
-    status = x;
+    push(x);
     return false;
 }
 

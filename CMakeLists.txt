@@ -13,7 +13,7 @@ add_executable(mariobox src/main.cpp
         src/core/Mapper.cpp src/core/Mapper.h
         src/core/NES.cpp src/core/NES.h
         src/core/P2C02.cpp src/core/P2C02.h
-        src/olcPixelGameEngine.h src/debug/ASM.cpp src/debug/ASM.h)
+        src/olcPixelGameEngine.h src/debug/ASM.cpp src/debug/ASM.h src/graphics/Frame.h src/graphics/NESColor.h src/graphics/Frame.cpp src/graphics/olc/OLCFrame.cpp src/graphics/olc/OLCFrame.h src/Logger.cpp src/Logger.h)
 
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
