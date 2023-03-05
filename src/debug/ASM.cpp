@@ -33,8 +33,12 @@ ASM *ASM::decompile(Memory *prg, int begin, int end) {
         switch (is.addrmode.bytes) {
             case 0x00:
                 break;
-            case 0x01:
-                line << hexof(prg->bus_read(SystemBus::MAIN_BUS_ID, addr++), 2);
+            case 0x01: {
+                uint8_t val = prg->bus_read(SystemBus::MAIN_BUS_ID, addr++);
+                line << hexof(val, 2);
+                if (is.addrmode.name == "REL" && (val & 0x80))
+                    line << " (-" << (int)(~val & 0x7F) - 1 << ")";
+            }
                 break;
             case 0x02: {
                 uint16_t lo = prg->bus_read(SystemBus::MAIN_BUS_ID, addr++);
