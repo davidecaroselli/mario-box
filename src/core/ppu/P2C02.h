@@ -65,7 +65,7 @@ public:
     }
 
     void clear_nmi() {
-        nmi_ = true;
+        nmi_ = false;
     }
 
     [[nodiscard]] bool is_frame_complete() const {
