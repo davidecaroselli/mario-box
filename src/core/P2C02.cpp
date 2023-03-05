@@ -21,9 +21,6 @@ uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {
             case 0x2001: // mask
                 break;
             case 0x2002: // status
-                //TODO: remove, just for testing
-                status.vertical_blank = 1;
-
                 //                           simulating dirty buffer on unused status bits
                 data = (status.reg & 0xE0) | (dma_data_buffer & 0x1F);
                 status.vertical_blank = 0;
@@ -40,7 +37,7 @@ uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {
                 data = dma_data_buffer;
                 dma_data_buffer = bus.read(dma_addr);
                 // no buffered read for palette
-                if (dma_addr > 0x3f00) data = dma_addr;
+                if (dma_addr > 0x3F00) data = dma_data_buffer;
 
                 dma_addr++;
             default:
