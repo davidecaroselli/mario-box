@@ -9,10 +9,42 @@
 
 using namespace std;
 
-string hexof(uint16_t val, int len = 4) {
+string hexof(uint16_t val, int len = 4, bool prefix = true) {
     stringstream num;
-    num << "0x" << std::uppercase << std::setfill('0') << std::setw(len) << std::hex << val;
+    if (prefix) num << "0x";
+    num << std::uppercase << std::setfill('0') << std::setw(len) << std::hex << val;
     return num.str();
+}
+
+string addrmode_str(const string &addrmode, uint16_t addr, uint8_t bytes) {
+    stringstream out;
+
+    if (bytes > 0) {
+        if (addrmode == "ABS" || addrmode == "ABX" || addrmode == "ABY") out << "$";
+        if (addrmode == "ZP0" || addrmode == "ZPX" || addrmode == "ZPY") out << "$";
+        if (addrmode == "IMM") out << "#";
+        if (addrmode == "IND" || addrmode == "IZX" || addrmode == "IZY") out << "($";
+
+        // print number
+        if (addrmode == "REL") {
+            if (addr & 0x80)
+                out << "-" << (int) (~addr & 0x007F) - 1;
+            else
+                out << "+" << (int) addr;
+        } else {
+            out << hexof(addr, bytes * 2, false);
+        }
+
+        if (addrmode == "ABX" || addrmode == "ZPX") out << ",X";
+        if (addrmode == "ABY" || addrmode == "ZPY") out << ",Y";
+        if (addrmode == "IND") out << ")";
+        if (addrmode == "IZX") out << ",X)";
+        if (addrmode == "IZY") out << "),Y";
+    }
+
+    stringstream pad_out;
+    pad_out << std::left << std::setfill(' ') << std::setw(9) << out.str();
+    return pad_out.str();
 }
 
 ASM *ASM::decompile(Memory *prg, int begin, int end) {
@@ -29,21 +61,21 @@ ASM *ASM::decompile(Memory *prg, int begin, int end) {
         if (is.name == "???") continue;
 
         stringstream line;
-        line << hexof(entry) << ": " << is.name << "{" << is.addrmode.name << "} ";
+        line << hexof(entry) << ": " << is.name << " ";
+
         switch (is.addrmode.bytes) {
-            case 0x00:
+            case 0:
+                line << addrmode_str(is.addrmode.name, 0, 0);
                 break;
-            case 0x01: {
+            case 1: {
                 uint8_t val = prg->bus_read(SystemBus::MAIN_BUS_ID, addr++);
-                line << hexof(val, 2);
-                if (is.addrmode.name == "REL" && (val & 0x80))
-                    line << " (-" << (int)(~val & 0x7F) - 1 << ")";
+                line << addrmode_str(is.addrmode.name, val, is.addrmode.bytes);
             }
                 break;
-            case 0x02: {
+            case 2: {
                 uint16_t lo = prg->bus_read(SystemBus::MAIN_BUS_ID, addr++);
                 uint16_t hi = prg->bus_read(SystemBus::MAIN_BUS_ID, addr++);
-                line << hexof((hi << 8) | lo);
+                line << addrmode_str(is.addrmode.name, (hi << 8) | lo, is.addrmode.bytes);
             }
                 break;
             default:
@@ -51,6 +83,7 @@ ASM *ASM::decompile(Memory *prg, int begin, int end) {
                 break;
         }
 
+        line << "  (" << is.addrmode.name << ")";
         lines[entry] = line.str();
     }
 
