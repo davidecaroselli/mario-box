@@ -3,9 +3,15 @@
 //
 
 #include "NES.h"
+#include "olcPixelGameEngine.h"
 
-NES::NES(){
+NES::NES(Canvas *screen) : ppu(screen) {
     cpu.bus.connect(&ppu);
+}
+
+void NES::reset() {
+    cpu.reset();
+    ticks = 0;
 }
 
 void NES::step() {
@@ -17,7 +23,7 @@ void NES::step() {
     clock();
 }
 
-void NES::clock()  {
+void NES::clock() {
     if (ticks % 3 == 0) {
         cpu.clock();
     }

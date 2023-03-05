@@ -100,13 +100,17 @@
 #include "olcPixelGameEngine.h"
 #include "core/NES.h"
 #include "debug/ASM.h"
+#include "platform/olc/olcCanvas.h"
 
 class Example : public olc::PixelGameEngine {
 public:
-    NES nes;
-    ASM *code;
+    olcCanvas screen;
 
-    Example() {
+    NES *nes;
+    ASM *code = nullptr;
+
+    Example(): screen(256, 240) {
+        nes = new NES(&screen);
         sAppName = "Example";
     }
 
@@ -114,7 +118,7 @@ public:
     bool OnUserCreate() override {
         Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
         //Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
-        nes.insert(cartridge);
+        nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
 
         return true;
@@ -122,7 +126,7 @@ public:
 
     void DrawCode(int x, int y) {
         int i = 0;
-        for (auto &line: code->snippet(nes.cpu.prg_counter, 8)) {
+        for (auto &line: code->snippet(nes->cpu.prg_counter, 8)) {
             DrawString(x, y + i * 10, line, i == 8 ? olc::WHITE : olc::GREY);
             i++;
         }
@@ -137,26 +141,26 @@ public:
 
     void DrawCPU(int x, int y) {
         DrawString(x, y, "STATUS:", olc::WHITE);
-        DrawString(x + 64, y, "N", nes.cpu.get_status(C6502::Status::N) ? olc::GREEN : olc::RED);
-        DrawString(x + 80, y, "V", nes.cpu.get_status(C6502::Status::V) ? olc::GREEN : olc::RED);
-        DrawString(x + 96, y, "-", nes.cpu.get_status(C6502::Status::U) ? olc::GREEN : olc::RED);
-        DrawString(x + 112, y, "B", nes.cpu.get_status(C6502::Status::B) ? olc::GREEN : olc::RED);
-        DrawString(x + 128, y, "D", nes.cpu.get_status(C6502::Status::D) ? olc::GREEN : olc::RED);
-        DrawString(x + 144, y, "I", nes.cpu.get_status(C6502::Status::I) ? olc::GREEN : olc::RED);
-        DrawString(x + 160, y, "Z", nes.cpu.get_status(C6502::Status::Z) ? olc::GREEN : olc::RED);
-        DrawString(x + 178, y, "C", nes.cpu.get_status(C6502::Status::C) ? olc::GREEN : olc::RED);
-        DrawString(x, y + 10, "PC: $" + hex(nes.cpu.prg_counter, 4));
-        DrawString(x, y + 20, "A: $" + hex(nes.cpu.a, 2) + "  [" + std::to_string(nes.cpu.a) + "]");
-        DrawString(x, y + 30, "X: $" + hex(nes.cpu.x, 2) + "  [" + std::to_string(nes.cpu.x) + "]");
-        DrawString(x, y + 40, "Y: $" + hex(nes.cpu.y, 2) + "  [" + std::to_string(nes.cpu.y) + "]");
-        DrawString(x, y + 50, "Stack P: $" + hex(nes.cpu.stack_ptr, 4));
+        DrawString(x + 64, y, "N", nes->cpu.get_status(C6502::Status::N) ? olc::GREEN : olc::RED);
+        DrawString(x + 80, y, "V", nes->cpu.get_status(C6502::Status::V) ? olc::GREEN : olc::RED);
+        DrawString(x + 96, y, "-", nes->cpu.get_status(C6502::Status::U) ? olc::GREEN : olc::RED);
+        DrawString(x + 112, y, "B", nes->cpu.get_status(C6502::Status::B) ? olc::GREEN : olc::RED);
+        DrawString(x + 128, y, "D", nes->cpu.get_status(C6502::Status::D) ? olc::GREEN : olc::RED);
+        DrawString(x + 144, y, "I", nes->cpu.get_status(C6502::Status::I) ? olc::GREEN : olc::RED);
+        DrawString(x + 160, y, "Z", nes->cpu.get_status(C6502::Status::Z) ? olc::GREEN : olc::RED);
+        DrawString(x + 178, y, "C", nes->cpu.get_status(C6502::Status::C) ? olc::GREEN : olc::RED);
+        DrawString(x, y + 10, "PC: $" + hex(nes->cpu.prg_counter, 4));
+        DrawString(x, y + 20, "A: $" + hex(nes->cpu.a, 2) + "  [" + std::to_string(nes->cpu.a) + "]");
+        DrawString(x, y + 30, "X: $" + hex(nes->cpu.x, 2) + "  [" + std::to_string(nes->cpu.x) + "]");
+        DrawString(x, y + 40, "Y: $" + hex(nes->cpu.y, 2) + "  [" + std::to_string(nes->cpu.y) + "]");
+        DrawString(x, y + 50, "Stack P: $" + hex(nes->cpu.stack_ptr, 4));
     }
 
     void DrawPalettes(int x, int y) {
         int so = 0;
         for (int p = 0; p < 8; p++) {
             for (int o = 0; o < 4; o++) {
-                const NESColor &c = nes.ppu.palettes.color_at(p, o);
+                const NESColor &c = nes->ppu.palettes.color_at(p, o);
                 olc::Pixel pc(c.r, c.g, c.b);
                 DrawString(x + so, y, "@", pc);
                 so += 8;
@@ -171,38 +175,33 @@ public:
     bool OnUserUpdate(float fElapsedTime) override {
         Clear(olc::DARK_BLUE);
 
-        Frame *frame = nullptr;
-
         if (bEmulationRun) {
             if (fResidualTime > 0.0f)
                 fResidualTime -= fElapsedTime;
             else {
                 fResidualTime += (1.0f / 60.0f) - fElapsedTime;
-                frame = nes.next_frame();
+                nes->frame();
             }
         } else {
             // Emulate code step-by-step
             if (GetKey(olc::Key::C).bPressed) {
-                nes.step();
+                nes->step();
             }
 
             // Emulate one whole frame
             if (GetKey(olc::Key::F).bPressed) {
-                frame = nes.next_frame();
+                nes->frame();
             }
         }
 
 
         if (GetKey(olc::Key::SPACE).bPressed) bEmulationRun = !bEmulationRun;
-        if (GetKey(olc::Key::R).bPressed) nes.reset();
+        if (GetKey(olc::Key::R).bPressed) nes->reset();
 
         DrawCPU(416, 25);
         DrawCode(416, 100);
         DrawPalettes(416, 280);
 
-        if (frame) {
-
-        }
 //        DrawSprite(0, 0, &nes.ppu.GetScreen(), 2);
         return true;
     }
@@ -210,6 +209,8 @@ public:
 
 
 int main() {
+    // #4 - 31:08
+
     Example demo;
     int scale = 1;
     if (demo.Construct(750, 480, scale, scale))

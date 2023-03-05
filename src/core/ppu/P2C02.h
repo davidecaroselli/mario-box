@@ -6,9 +6,9 @@
 #define MARIOBOX_P2C02_H
 
 #include "core/SystemBus.h"
-#include "graphics/Frame.h"
 #include "Palettes.h"
 #include "core/C6502.h"
+#include "platform/Canvas.h"
 
 union ppustatus_t {
     struct {
@@ -58,9 +58,7 @@ public:
     ppumask_t mask;
     ppucontrol_t control;
 
-    P2C02();
-
-    ~P2C02();
+    explicit P2C02(Canvas *screen);
 
     [[nodiscard]] bool nmi() const {
         return nmi_;
@@ -68,10 +66,6 @@ public:
 
     void clear_nmi() {
         nmi_ = true;
-    }
-
-    [[nodiscard]] Frame *frame() const {
-        return frame_;
     }
 
     [[nodiscard]] bool is_frame_complete() const {
@@ -93,7 +87,7 @@ public:
     void clock();
 
 private:
-    Frame *frame_;
+    Canvas *screen;
 
     int cycle = 0;
     int scanline = 0;

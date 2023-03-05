@@ -7,7 +7,7 @@
 
 
 #include "core/Memory.h"
-#include "graphics/NESColor.h"
+#include "NESColor.h"
 
 class Palettes : public SBDevice {
 public:

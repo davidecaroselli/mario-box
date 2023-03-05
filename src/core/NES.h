@@ -19,22 +19,17 @@ public:
 
     std::shared_ptr<Cartridge> cartridge = nullptr;
 
-    NES();
+    explicit NES(Canvas *screen);
 
-    void reset() {
-        cpu.reset();
-        ticks = 0;
-    }
+    void reset();
 
-    void clock();
-
-    Frame *next_frame() {
+    void frame() {
         do {
             clock();
         } while (!ppu.is_frame_complete());
-
-        return ppu.frame();
     }
+
+    void clock();
 
     void insert(Cartridge *crt) {
         if (this->cartridge) eject();
