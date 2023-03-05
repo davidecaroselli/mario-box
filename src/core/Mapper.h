@@ -13,6 +13,8 @@ class Mapper {
 public:
     static Mapper *create(uint8_t type, uint8_t prg_banks, uint8_t chr_banks);
 
+    virtual ~Mapper() = default;
+
     virtual uint32_t remap(uint8_t bus_id, uint16_t addr) = 0;
 };
 

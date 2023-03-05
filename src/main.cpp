@@ -156,16 +156,19 @@ public:
         DrawString(x, y + 50, "Stack P: $" + hex(nes->cpu.stack_ptr, 4));
     }
 
+    olcCanvas p0 = olcCanvas(4, 1);
+    olcCanvas p1 = olcCanvas(4, 1);
+    olcCanvas p2 = olcCanvas(4, 1);
+    olcCanvas p3 = olcCanvas(4, 1);
+    olcCanvas p4 = olcCanvas(4, 1);
+    olcCanvas p5 = olcCanvas(4, 1);
+    olcCanvas p6 = olcCanvas(4, 1);
+    olcCanvas p7 = olcCanvas(4, 1);
+    std::vector<olcCanvas *> palettes = {&p0, &p1, &p2, &p3, &p4, &p5, &p6, &p7};
     void DrawPalettes(int x, int y) {
-        int so = 0;
         for (int p = 0; p < 8; p++) {
-            for (int o = 0; o < 4; o++) {
-                const NESColor &c = nes->ppu.palettes.color_at(p, o);
-                olc::Pixel pc(c.r, c.g, c.b);
-                DrawString(x + so, y, "@", pc);
-                so += 8;
-            }
-            so += 2;
+            nes->ppu.palettes.render(p, palettes[p]);
+            DrawSprite(x + p * 36, y, &palettes[p]->sprite, 6);
         }
     }
 
@@ -198,9 +201,9 @@ public:
         if (GetKey(olc::Key::SPACE).bPressed) bEmulationRun = !bEmulationRun;
         if (GetKey(olc::Key::R).bPressed) nes->reset();
 
-        DrawCPU(416, 25);
-        DrawCode(416, 100);
-        DrawPalettes(416, 280);
+        DrawCPU(416, 10);
+        DrawCode(416, 80);
+        DrawPalettes(416, 255);
 
 //        DrawSprite(0, 0, &nes.ppu.GetScreen(), 2);
         return true;

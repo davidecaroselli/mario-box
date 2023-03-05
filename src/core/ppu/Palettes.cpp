@@ -36,3 +36,10 @@ const NESColor &Palettes::color_at(uint8_t palette, uint8_t offset) {
     uint8_t cid = bus_read(0, (palette << 2) + offset);
     return NESColors[cid & 0x37];
 }
+
+void Palettes::render(uint8_t palette, Canvas *canvas) {
+    canvas->set(0, 0, color_at(palette, 0));
+    canvas->set(1, 0, color_at(palette, 1));
+    canvas->set(2, 0, color_at(palette, 2));
+    canvas->set(3, 0, color_at(palette, 3));
+}
