@@ -6,7 +6,7 @@
 
 using namespace std;
 
-C6502::C6502(): bus(SystemBus::MAIN_BUS_ID), ram(2048, 0x0000, 0x1FFF) {
+C6502::C6502() : bus(SystemBus::MAIN_BUS_ID), ram(2048, 0x0000, 0x1FFF) {
     bus.connect(&ram);
 }
 
@@ -207,9 +207,11 @@ bool C6502::IZY_() {
 
 // - Instructions ------------------------------------------------------------------------------------------------------
 
+// Add Memory to Accumulator with Carry
+// A + M + C -> A, C
 bool C6502::ADC() {
     uint16_t fetched = fetch();
-    uint16_t sum = ((uint16_t) a) + fetched + (get_status(C) ? 1 : 0) + (get_status(D) ? 1 : 0);
+    uint16_t sum = ((uint16_t) a) + fetched + (get_status(C) ? 1 : 0);
 
     set_status(C, sum > 0x00FF);
     set_status(Z, (sum & 0x00FF) == 0);
@@ -221,13 +223,17 @@ bool C6502::ADC() {
     return true;
 }
 
+// AND Memory with Accumulator
+// A AND M -> A
 bool C6502::AND() {
     a = a & fetch();
     set_status(Z, a == 0x00);
-    set_status(N, a & 0x80);
+    set_status(N, (a & 0x80) > 0);
     return true;
 }
 
+// Shift Left One Bit (Memory or Accumulator)
+// C <- [76543210] <- 0
 bool C6502::ASL() {
     bool is_reg_a = (instruction->addrmode.name == "IMP");  // Implied means register A
 
@@ -235,18 +241,19 @@ bool C6502::ASL() {
     value <<= 1;
 
     set_status(C, (value & 0xFF00) > 0);
-    value &= 0x00FF;
     set_status(N, (value & 0x0080) > 0);
-    set_status(Z, value == 0x0000);
+    set_status(Z, (value & 0x00FF) == 0x0000);
 
     if (is_reg_a)
-        a = value;
+        a = value & 0x00FF;
     else
-        bus.write(abs_addr, value);
+        bus.write(abs_addr, value & 0x00FF);
 
     return !is_reg_a;
 }
 
+// Branch on Carry Clear
+// branch on C = 0
 bool C6502::BCC() {
     if (!get_status(C))
         branch();
@@ -254,6 +261,8 @@ bool C6502::BCC() {
     return false;
 }
 
+// Branch on Carry Set
+// branch on C = 1
 bool C6502::BCS() {
     if (get_status(C))
         branch();
@@ -261,6 +270,8 @@ bool C6502::BCS() {
     return false;
 }
 
+// Branch on Result Zero
+// branch on Z = 1
 bool C6502::BEQ() {
     if (get_status(Z))
         branch();
@@ -268,6 +279,11 @@ bool C6502::BEQ() {
     return false;
 }
 
+// Test Bits in Memory with Accumulator
+// bits 7 and 6 of operand are transferred to bit 7 and 6 of SR (N,V);
+// the zero-flag is set to the result of operand AND accumulator.
+//
+// A AND M, M7 -> N, M6 -> V
 bool C6502::BIT() {
     uint8_t fetched = fetch();
     set_status(N, (fetched & N) > 0);
@@ -277,6 +293,8 @@ bool C6502::BIT() {
     return false;
 }
 
+// Branch on Result Minus
+// branch on N = 1
 bool C6502::BMI() {
     if (get_status(N))
         branch();
@@ -284,6 +302,8 @@ bool C6502::BMI() {
     return false;
 }
 
+// Branch on Result not Zero
+// branch on Z = 0
 bool C6502::BNE() {
     if (!get_status(Z))
         branch();
@@ -291,6 +311,8 @@ bool C6502::BNE() {
     return false;
 }
 
+// Branch on Result Plus
+// branch on N = 0
 bool C6502::BPL() {
     if (!get_status(N))
         branch();
@@ -298,8 +320,20 @@ bool C6502::BPL() {
     return false;
 }
 
+// Force Break
+//
+// BRK initiates a software interrupt similar to a hardware
+// interrupt (IRQ). The return address pushed to the stack is
+// PC+2, providing an extra byte of spacing for a break mark
+// (identifying a reason for the break.)
+// The status register will be pushed to the stack with the break
+// flag set to 1. However, when retrieved during RTI or by a PLP
+// instruction, the break flag will be ignored.
+// The interrupt disable flag is not set automatically.
+//
+// interrupt, push PC+2, push SR
 bool C6502::BRK() {
-    prg_counter++;
+    prg_counter += 2;  //TODO: verify
 
     set_status(I, true);
     push(prg_counter >> 8);
@@ -317,6 +351,8 @@ bool C6502::BRK() {
     return false;
 }
 
+// Branch on Overflow Clear
+// branch on V = 0
 bool C6502::BVC() {
     if (!get_status(V))
         branch();
@@ -324,6 +360,8 @@ bool C6502::BVC() {
     return false;
 }
 
+// Branch on Overflow Set
+// branch on V = 1
 bool C6502::BVS() {
     if (get_status(V))
         branch();
@@ -351,30 +389,41 @@ bool C6502::CLV() {
     return false;
 }
 
+// Compare Memory with Accumulator
+// A - M
 bool C6502::CMP() {
-    uint16_t diff = ((uint16_t) a) - fetch();
-    set_status(C, diff > 0x00FF);
+    uint16_t fetched = fetch();
+    uint16_t diff = ((uint16_t) a) - fetched;
+    set_status(C, a >= fetched);
     set_status(Z, (diff & 0x00FF) == 0x0000);
     set_status(N, (diff & 0x0080) > 0);
     return true;
 }
 
+// Compare Memory and Index X
+// X - M
 bool C6502::CPX() {
-    uint16_t diff = ((uint16_t) x) - fetch();
-    set_status(C, diff > 0x00FF);
+    uint16_t fetched = fetch();
+    uint16_t diff = ((uint16_t) x) - fetched;
+    set_status(C, x >= fetched);
     set_status(Z, (diff & 0x00FF) == 0x0000);
     set_status(N, (diff & 0x0080) > 0);
     return true;
 }
 
+// Compare Memory and Index Y
+// Y - M
 bool C6502::CPY() {
-    uint16_t diff = ((uint16_t) y) - fetch();
-    set_status(C, diff > 0x00FF);
+    uint16_t fetched = fetch();
+    uint16_t diff = ((uint16_t) y) - fetched;
+    set_status(C, y >= fetched);
     set_status(Z, (diff & 0x00FF) == 0x0000);
     set_status(N, (diff & 0x0080) > 0);
     return true;
 }
 
+// Decrement Memory by One
+// M - 1 -> M
 bool C6502::DEC() {
     uint8_t value = fetch();
     value--;
@@ -385,6 +434,8 @@ bool C6502::DEC() {
     return true;
 }
 
+// Decrement Index X by One
+// X - 1 -> X
 bool C6502::DEX() {
     x--;
     set_status(Z, x == 0x00);
@@ -392,6 +443,8 @@ bool C6502::DEX() {
     return false;
 }
 
+// Decrement Index Y by One
+// Y - 1 -> Y
 bool C6502::DEY() {
     y--;
     set_status(Z, y == 0x00);
@@ -399,13 +452,17 @@ bool C6502::DEY() {
     return false;
 }
 
+// Exclusive-OR Memory with Accumulator
+// A EOR M -> A
 bool C6502::EOR() {
     a = a ^ fetch();
     set_status(Z, a == 0x00);
-    set_status(N, a & 0x80);
+    set_status(N, (a & 0x80) > 0);
     return true;
 }
 
+// Increment Memory by One
+// M + 1 -> M
 bool C6502::INC() {
     uint8_t value = fetch();
     value++;
@@ -416,6 +473,8 @@ bool C6502::INC() {
     return true;
 }
 
+// Increment Index X by One
+// X + 1 -> X
 bool C6502::INX() {
     x++;
     set_status(Z, x == 0x00);
@@ -423,6 +482,8 @@ bool C6502::INX() {
     return false;
 }
 
+// Increment Index Y by One
+// Y + 1 -> Y
 bool C6502::INY() {
     y++;
     set_status(Z, y == 0x00);
@@ -430,13 +491,17 @@ bool C6502::INY() {
     return false;
 }
 
+// Jump to New Location
+// (PC+1) -> PCL, (PC+2) -> PCH
 bool C6502::JMP() {
     prg_counter = abs_addr;
     return false;
 }
 
+// Jump to New Location Saving Return Address
+// push (PC+2), (PC+1) -> PCL (PC+2) -> PCH
 bool C6502::JSR() {
-    prg_counter--;
+    prg_counter += 2;  //TODO: verify
     push(prg_counter >> 8);
     push(prg_counter);
 
@@ -444,33 +509,41 @@ bool C6502::JSR() {
     return false;
 }
 
+// Load Accumulator with Memory
+// M -> A
 bool C6502::LDA() {
     a = fetch();
     set_status(Z, a == 0x00);
-    set_status(N, a & 0x80);
+    set_status(N, (a & 0x80) > 0);
     return true;
 }
 
+// Load Index X with Memory
+// M -> X
 bool C6502::LDX() {
     x = fetch();
     set_status(Z, x == 0x00);
-    set_status(N, x & 0x80);
+    set_status(N, (x & 0x80) > 0);
     return true;
 }
 
+// Load Index Y with Memory
+// M -> Y
 bool C6502::LDY() {
     y = fetch();
     set_status(Z, y == 0x00);
-    set_status(N, y & 0x80);
+    set_status(N, (y & 0x80) > 0);
     return true;
 }
 
+// Shift One Bit Right (Memory or Accumulator)
+// 0 -> [76543210] -> C
 bool C6502::LSR() {
     bool is_reg_a = (instruction->addrmode.name == "IMP");  // Implied means register A
 
     uint8_t value = is_reg_a ? a : fetch();
     set_status(C, (value & 0x0001) > 0);
-    value >>= 1;
+    value = (value >> 1) & 0x7F;
     set_status(N, false);
     set_status(Z, value == 0x00);
 
@@ -482,6 +555,7 @@ bool C6502::LSR() {
     return !is_reg_a;
 }
 
+// No Operation
 bool C6502::NOP() {
     // Not all NOPs are equal!
     // https://wiki.nesdev.com/w/index.php/CPU_unofficial_opcodes
@@ -497,44 +571,56 @@ bool C6502::NOP() {
     return false;
 }
 
+// OR Memory with Accumulator
+// A OR M -> A
 bool C6502::ORA() {
-    a = a | fetch();
+    a |= fetch();
     set_status(Z, a == 0x00);
-    set_status(N, a & 0x80);
+    set_status(N, (a & 0x80) > 0);
     return true;
 }
 
+// Push Accumulator on Stack
 bool C6502::PHA() {
     push(a);
     return false;
 }
 
+// Push Processor Status on Stack
+// The status register will be pushed with the break
+// flag and bit 5 set to 1.
 bool C6502::PHP() {
-    push(status);
+    push(status | B | U);
     return false;
 }
 
+// Pull Accumulator from Stack
 bool C6502::PLA() {
     a = pop();
-    set_status(N, (a & 0x80) > 0);
     set_status(Z, a == 0x00);
+    set_status(N, (a & 0x80) > 0);
     return false;
 }
 
+// Pull Processor Status from Stack
+// The status register will be pulled with the break
+// flag and bit 5 ignored.
 bool C6502::PLP() {
-    status = pop() | U | B;
+    status = pop();
     return false;
 }
 
+// Rotate One Bit Left (Memory or Accumulator)
+// C <- [76543210] <- C
 bool C6502::ROL() {
     bool is_reg_a = (instruction->addrmode.name == "IMP");  // Implied means register A
 
     uint16_t value = is_reg_a ? a : fetch();
     value = (value << 1) | (get_status(C) ? 1 : 0);
-    set_status(C, (value & 0x0100) > 0);
+    set_status(C, (value & 0xFF00) > 0);
     value &= 0x00FF;
-    set_status(N, (value & 0x0080) > 0);
     set_status(Z, value == 0x0000);
+    set_status(N, (value & 0x0080) > 0);
 
     if (is_reg_a)
         a = value;
@@ -544,6 +630,8 @@ bool C6502::ROL() {
     return !is_reg_a;
 }
 
+// Rotate One Bit Right (Memory or Accumulator)
+// C -> [76543210] -> C
 bool C6502::ROR() {
     bool is_reg_a = (instruction->addrmode.name == "IMP");  // Implied means register A
 
@@ -563,26 +651,33 @@ bool C6502::ROR() {
     return !is_reg_a;
 }
 
+// Return from Interrupt
+// The status register is pulled with the break flag
+// and bit 5 ignored. Then PC is pulled from the stack.
 bool C6502::RTI() {
-    status = pop() | B | U;
+    status = pop();
+    status &= ~U;
     uint16_t lo = pop();
     uint16_t hi = pop();
     prg_counter = (hi << 8) | lo;
     return false;
 }
 
+// Return from Subroutine
+// pull PC, PC+1 -> PC
 bool C6502::RTS() {
     uint16_t lo = pop();
     uint16_t hi = pop();
     prg_counter = (hi << 8) | lo;
-    prg_counter++;
     return false;
 }
 
+// Subtract Memory from Accumulator with Borrow
+// A - M - !C -> A
 bool C6502::SBC() {
     uint16_t fetched = ((uint16_t) fetch()) ^ 0x00FF;
 
-    uint16_t diff = ((uint16_t) a) + fetched + (get_status(C) ? 1 : 0) + (get_status(D) ? 1 : 0);
+    uint16_t diff = ((uint16_t) a) + fetched + (get_status(C) ? 1 : 0);
 
     set_status(C, diff > 0x00FF);
     set_status(Z, (diff & 0x00FF) == 0);
@@ -594,36 +689,50 @@ bool C6502::SBC() {
     return true;
 }
 
+// Set Carry Flag
+// 1 -> C
 bool C6502::SEC() {
     set_status(C, true);
     return false;
 }
 
+// Set Decimal Flag
+// 1 -> D
 bool C6502::SED() {
     set_status(D, true);
     return false;
 }
 
+// Set Interrupt Disable Status
+// 1 -> I
 bool C6502::SEI() {
     set_status(I, true);
     return false;
 }
 
+// Store Accumulator in Memory
+// A -> M
 bool C6502::STA() {
     bus.write(abs_addr, a);
     return false;
 }
 
+// Store Index X in Memory
+// X -> M
 bool C6502::STX() {
     bus.write(abs_addr, x);
     return false;
 }
 
+// Store Index Y in Memory
+// Y -> M
 bool C6502::STY() {
     bus.write(abs_addr, y);
     return false;
 }
 
+// Transfer Accumulator to Index X
+// A -> X
 bool C6502::TAX() {
     x = a;
     set_status(N, (a & 0x80) > 0);
@@ -631,6 +740,8 @@ bool C6502::TAX() {
     return false;
 }
 
+// Transfer Accumulator to Index Y
+// A -> Y
 bool C6502::TAY() {
     y = a;
     set_status(N, (a & 0x80) > 0);
@@ -638,13 +749,17 @@ bool C6502::TAY() {
     return false;
 }
 
+// Transfer Stack Pointer to Index X
+// SP -> X
 bool C6502::TSX() {
-    x = pop();
+    x = stack_ptr;
     set_status(N, (status & 0x80) > 0);
     set_status(Z, status == 0x00);
     return false;
 }
 
+// Transfer Index X to Accumulator
+// X -> A
 bool C6502::TXA() {
     a = x;
     set_status(N, (x & 0x80) > 0);
@@ -652,11 +767,15 @@ bool C6502::TXA() {
     return false;
 }
 
+// Transfer Index X to Stack Register
+// X -> SP
 bool C6502::TXS() {
-    push(x);
+    stack_ptr = x;
     return false;
 }
 
+// Transfer Index Y to Accumulator
+// Y -> A
 bool C6502::TYA() {
     a = y;
     set_status(N, (y & 0x80) > 0);
