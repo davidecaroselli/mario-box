@@ -7,7 +7,6 @@
 
 
 #include "core/Memory.h"
-#include "NESColor.h"
 #include "platform/Canvas.h"
 
 struct Palette {

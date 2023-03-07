@@ -116,11 +116,13 @@ public:
 
 public:
     bool OnUserCreate() override {
-        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
-//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
+        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
+
+        DrawUI();
 
         return true;
     }
@@ -175,12 +177,22 @@ public:
 
     olcCanvas chr0 = olcCanvas(128, 128);
     olcCanvas chr1 = olcCanvas(128, 128);
+    uint8_t palette_idx = 0;
     void DrawPatternTables(int x, int y) {
-        Palette palette = nes->ppu.palettes.get(0);
+        Palette palette = nes->ppu.palettes.get(palette_idx);
         nes->cartridge->chr.render(0, palette, &chr0);
         nes->cartridge->chr.render(1, palette, &chr1);
         DrawSprite(x, y, &chr0.sprite);
         DrawSprite(x + 132, y, &chr1.sprite);
+    }
+
+    void DrawUI() {
+        Clear(olc::DARK_BLUE);
+
+        DrawCPU(416, 10);
+        DrawCode(416, 80);
+        DrawPalettes(416, 255);
+        DrawPatternTables(416, 280);
     }
 
     bool bEmulationRun = false;
@@ -188,8 +200,6 @@ public:
     bool jump = true;
 
     bool OnUserUpdate(float fElapsedTime) override {
-        Clear(olc::DARK_BLUE);
-
 //        if (jump) {
 //            while (true) {
 //                nes->step();
@@ -200,35 +210,30 @@ public:
 //            bEmulationRun = false;
 //        }
 
+        bool draw_ui = true;
+
         if (bEmulationRun) {
-            if (fResidualTime > 0.0f)
+            if (fResidualTime > 0.0f) {
                 fResidualTime -= fElapsedTime;
-            else {
+                draw_ui = false;
+            } else {
                 fResidualTime += (1.0f / 60.0f) - fElapsedTime;
                 nes->frame();
             }
         } else {
             // Emulate code step-by-step
-            if (GetKey(olc::Key::C).bPressed) {
-                nes->step();
-            }
+            if (GetKey(olc::Key::C).bPressed) nes->step();
 
             // Emulate one whole frame
-            if (GetKey(olc::Key::F).bPressed) {
-                nes->frame();
-            }
+            if (GetKey(olc::Key::F).bPressed) nes->frame();
         }
-
 
         if (GetKey(olc::Key::SPACE).bPressed) bEmulationRun = !bEmulationRun;
         if (GetKey(olc::Key::R).bPressed) nes->reset();
+        if (GetKey(olc::Key::P).bPressed) palette_idx = (palette_idx + 1) & 0x07;
 
-        DrawCPU(416, 10);
-        DrawCode(416, 80);
-        DrawPalettes(416, 255);
-        DrawPatternTables(416, 280);
+        if (draw_ui) DrawUI();
 
-//        DrawSprite(0, 0, &nes.ppu.GetScreen(), 2);
         return true;
     }
 };
@@ -238,8 +243,8 @@ int main() {
     // #4 - 31:08
 
     Example demo;
-    int scale = 1;
-    if (demo.Construct(750, 480, scale, scale))
+    int scale = 2;
+    if (demo.Construct(700, 420, scale, scale))
         demo.Start();
 
     return 0;

@@ -6,14 +6,8 @@
 #include "Logger.h"
 
 P2C02::P2C02(Canvas *screen) : bus(SystemBus::PPU_BUS_ID), screen(screen), name_tables(2048, 0x2000, 0x2FFF) {
-    if (screen->width != 256) {
-        Logger::err("unexpected screen width: %d", screen->width);
-        exit(1);
-    }
-    if (screen->height != 240) {
-        Logger::err("unexpected screen height: %d", screen->height);
-        exit(1);
-    }
+    assert(screen->width == 256);
+    assert(screen->height == 240);
 
     bus.connect(&name_tables);
     bus.connect(&palettes);
