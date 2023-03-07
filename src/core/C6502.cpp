@@ -501,7 +501,12 @@ bool C6502::JMP() {
 // Jump to New Location Saving Return Address
 // push (PC+2), (PC+1) -> PCL (PC+2) -> PCH
 bool C6502::JSR() {
-    prg_counter += 2;  //TODO: verify
+    // JSR instruction is weird: it is a 3-byte instruction and only operates in absolute mode.
+    // However, JSR only increments the PC by 2 before pushing it on the stack.
+    // Which means the return address points to the last byte of the JSR instruction.
+    // Finally, the RTS pops the value from the stack and increments it again before setting the PC to the corrected value.
+    // Source: https://retrocomputing.stackexchange.com/questions/19543/why-does-the-6502-jsr-instruction-only-increment-the-return-address-by-2-bytes
+    prg_counter--;
     push(prg_counter >> 8);
     push(prg_counter);
 
@@ -669,6 +674,14 @@ bool C6502::RTS() {
     uint16_t lo = pop();
     uint16_t hi = pop();
     prg_counter = (hi << 8) | lo;
+
+    // JSR instruction is weird: it is a 3-byte instruction and only operates in absolute mode.
+    // However, JSR only increments the PC by 2 before pushing it on the stack.
+    // Which means the return address points to the last byte of the JSR instruction.
+    // Finally, the RTS pops the value from the stack and increments it again before setting the PC to the corrected value.
+    // Source: https://retrocomputing.stackexchange.com/questions/19543/why-does-the-6502-jsr-instruction-only-increment-the-return-address-by-2-bytes
+    prg_counter++;
+
     return false;
 }
 

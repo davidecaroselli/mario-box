@@ -174,9 +174,20 @@ public:
 
     bool bEmulationRun = false;
     float fResidualTime = 0;
+    bool jump = true;
 
     bool OnUserUpdate(float fElapsedTime) override {
         Clear(olc::DARK_BLUE);
+
+//        if (jump) {
+//            while (true) {
+//                nes->step();
+//                if (nes->cpu.prg_counter == 0xC07E) break;
+//                if (nes->cpu.prg_counter == 0xC306) break;
+//            }
+//            jump = false;
+//            bEmulationRun = false;
+//        }
 
         if (bEmulationRun) {
             if (fResidualTime > 0.0f)
