@@ -93,9 +93,9 @@ private:
     int scanline = 0;
     bool frame_complete = false;
 
-    uint8_t dma_data_buffer = 0;
-    bool dma_lsb_addr = false;  // first read is for MSB
-    uint16_t dma_addr = 0;
+    bool     ppu_lsb_addr = false;  // first read is for MSB
+    uint16_t ppu_addr = 0;
+    uint8_t  ppu_data_buffer = 0;
 
     bool nmi_ = false;
 };

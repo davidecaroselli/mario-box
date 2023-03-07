@@ -22,9 +22,9 @@ uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {
             case 0x2001: // mask
                 break;
             case 0x2002: // status
-                data = (status.reg & 0xE0) | (dma_data_buffer & 0x1F); // simulating dirty buffer on unused status bits
+                data = (status.reg & 0xE0) | (ppu_data_buffer & 0x1F); // simulating dirty buffer on unused status bits
                 status.vertical_blank = 0;
-                dma_lsb_addr = false;
+                ppu_lsb_addr = false;
                 break;
             case 0x2003: // OAM address
             case 0x2004: // OAM data
@@ -34,12 +34,12 @@ uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {
                 Logger::err("attempting to read from PPU DMA address");
                 break;
             case 0x2007: // DMA data
-                data = dma_data_buffer;
-                dma_data_buffer = bus.read(dma_addr);
+                data = ppu_data_buffer;
+                ppu_data_buffer = bus.read(ppu_addr);
                 // no buffered read for palette
-                if (dma_addr > 0x3F00) data = dma_data_buffer;
+                if (ppu_addr > 0x3F00) data = ppu_data_buffer;
 
-                dma_addr++;
+                ppu_addr++;
             default:
                 Logger::err("invalid PPU address 0x%04X", addr);
                 break;
@@ -66,15 +66,15 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
             case 0x2005: // scroll
                 break;
             case 0x2006: // DMA addr
-                if (dma_lsb_addr)
-                    dma_addr = (dma_addr & 0xFF00) | val;
+                if (ppu_lsb_addr)
+                    ppu_addr = (ppu_addr & 0xFF00) | val;
                 else
-                    dma_addr = (dma_addr & 0x00FF) | (((uint16_t) val) << 8);
-                dma_lsb_addr = !dma_lsb_addr;
+                    ppu_addr = (ppu_addr & 0x00FF) | (((uint16_t) val) << 8);
+                ppu_lsb_addr = !ppu_lsb_addr;
                 break;
             case 0x2007: // DMA data
-                bus.write(dma_addr, val);
-                dma_addr += 1;
+                bus.write(ppu_addr, val);
+                ppu_addr += 1;
                 break;
             default:
                 Logger::err("invalid PPU address 0x%04X", addr);
