@@ -17,7 +17,7 @@ public:
 
     virtual ~Canvas() = default;
 
-    virtual void set(uint16_t x, uint16_t y, const NESColor &color) = 0;
+    virtual void set(uint16_t x, uint16_t y, const NESColor *color) = 0;
 };
 
 #endif //MARIOBOX_CANVAS_H

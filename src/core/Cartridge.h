@@ -7,6 +7,7 @@
 
 #include "Mapper.h"
 #include "Memory.h"
+#include "core/ppu/PatternTables.h"
 
 enum Mirroring {
     Vertical,
@@ -18,7 +19,7 @@ public:
     const Mirroring mirroring;
     const std::shared_ptr<Mapper> mapper;
     Memory prg;
-    Memory chr;
+    PatternTables chr;
 
     static Cartridge *load(const std::string &path);
 

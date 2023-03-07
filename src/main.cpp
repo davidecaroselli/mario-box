@@ -117,7 +117,8 @@ public:
 public:
     bool OnUserCreate() override {
         Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
-        //Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
 
@@ -172,6 +173,16 @@ public:
         }
     }
 
+    olcCanvas chr0 = olcCanvas(128, 128);
+    olcCanvas chr1 = olcCanvas(128, 128);
+    void DrawPatternTables(int x, int y) {
+        Palette palette = nes->ppu.palettes.get(0);
+        nes->cartridge->chr.render(0, palette, &chr0);
+        nes->cartridge->chr.render(1, palette, &chr1);
+        DrawSprite(x, y, &chr0.sprite);
+        DrawSprite(x + 132, y, &chr1.sprite);
+    }
+
     bool bEmulationRun = false;
     float fResidualTime = 0;
     bool jump = true;
@@ -215,6 +226,7 @@ public:
         DrawCPU(416, 10);
         DrawCode(416, 80);
         DrawPalettes(416, 255);
+        DrawPatternTables(416, 280);
 
 //        DrawSprite(0, 0, &nes.ppu.GetScreen(), 2);
         return true;

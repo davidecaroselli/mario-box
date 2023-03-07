@@ -22,7 +22,7 @@ add_executable(mariobox src/main.cpp
         src/platform/Canvas.h
 
         src/debug/ASM.cpp src/debug/ASM.h
-        src/Logger.cpp src/Logger.h src/platform/olc/olcCanvas.cpp src/platform/olc/olcCanvas.h)
+        src/Logger.cpp src/Logger.h src/platform/olc/olcCanvas.cpp src/platform/olc/olcCanvas.h src/core/ppu/PatternTables.cpp src/core/ppu/PatternTables.h)
 
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})

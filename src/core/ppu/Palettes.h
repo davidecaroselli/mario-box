@@ -10,6 +10,10 @@
 #include "NESColor.h"
 #include "platform/Canvas.h"
 
+struct Palette {
+    const NESColor *colors[4] = {nullptr, nullptr, nullptr, nullptr};
+};
+
 class Palettes : public SBDevice {
 public:
     uint16_t bus_begin(uint8_t bus_id) override;
@@ -24,10 +28,12 @@ public:
 
     void render(uint8_t palette, Canvas *canvas);
 
+    Palette get(uint8_t palette);
+
 private:
     uint8_t data[32]{};
 
-    const NESColor &color_at(uint8_t palette, uint8_t offset);
+    const NESColor *color_at(uint8_t palette, uint8_t offset);
 };
 
 

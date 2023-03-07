@@ -26,7 +26,7 @@ Cartridge::Cartridge(const Mirroring mirroring, Mapper *mapper, const std::vecto
                      const std::vector<uint8_t> &chr)
         : mirroring(mirroring), mapper(mapper),
           prg(prg, this->mapper, 0x4020, 0xFFFF),
-          chr(chr, this->mapper, 0x0000, 0x1FFF) {}
+          chr(chr, this->mapper) {}
 
 Cartridge *Cartridge::load(const string &path) {
     ifstream ifs(path, ios::in | ios::binary);

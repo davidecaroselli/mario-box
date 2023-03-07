@@ -32,14 +32,25 @@ void Palettes::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
     data[addr] = val;
 }
 
-const NESColor &Palettes::color_at(uint8_t palette, uint8_t offset) {
+const NESColor *Palettes::color_at(uint8_t palette, uint8_t offset) {
     uint8_t cid = bus_read(0, (palette << 2) + offset);
-    return NESColors[cid & 0x37];
+    return &NESColors[cid & 0x37];
 }
 
 void Palettes::render(uint8_t palette, Canvas *canvas) {
+    assert(canvas->width == 4);
+    assert(canvas->height == 1);
     canvas->set(0, 0, color_at(palette, 0));
     canvas->set(1, 0, color_at(palette, 1));
     canvas->set(2, 0, color_at(palette, 2));
     canvas->set(3, 0, color_at(palette, 3));
+}
+
+Palette Palettes::get(uint8_t palette) {
+    Palette ret;
+    ret.colors[0] = color_at(palette, 0);
+    ret.colors[1] = color_at(palette, 1);
+    ret.colors[2] = color_at(palette, 2);
+    ret.colors[3] = color_at(palette, 3);
+    return ret;
 }
