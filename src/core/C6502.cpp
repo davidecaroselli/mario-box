@@ -55,17 +55,17 @@ void C6502::reset() {
 
 void C6502::irq() {
     if (!get_status(I)) {
-        interrupt();
+        interrupt(IRQ_ROUTINE_ADDR);
         cycles_ = 7;
     }
 }
 
 void C6502::nmi() {
-    interrupt();
+    interrupt(0xFFFA);
     cycles_ = 8;
 }
 
-void C6502::interrupt() {
+void C6502::interrupt(uint16_t location) {
     push((prg_counter >> 8) & 0x00FF);
     push(prg_counter & 0x00FF);
 
@@ -74,7 +74,7 @@ void C6502::interrupt() {
     set_status(I, true);
     push(status);
 
-    abs_addr = INT_ROUTINE_ADDR;
+    abs_addr = location;
     uint16_t lo = bus.read(abs_addr);
     uint16_t hi = bus.read(abs_addr + 1);
     prg_counter = (hi << 8) | lo;
@@ -333,7 +333,7 @@ bool C6502::BPL() {
 //
 // interrupt, push PC+2, push SR
 bool C6502::BRK() {
-    prg_counter += 2;  //TODO: verify
+    prg_counter += 1;  // +1 already happened after opcode read
 
     set_status(I, true);
     push(prg_counter >> 8);
@@ -343,7 +343,7 @@ bool C6502::BRK() {
     push(status);
     set_status(B, false);
 
-    abs_addr = INT_ROUTINE_ADDR;
+    abs_addr = IRQ_ROUTINE_ADDR;
     uint16_t lo = bus.read(abs_addr);
     uint16_t hi = bus.read(abs_addr + 1);
     prg_counter = (hi << 8) | lo;

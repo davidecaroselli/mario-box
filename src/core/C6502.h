@@ -40,7 +40,7 @@ class C6502 {
 public:
     static const uint16_t STACK_BEGIN_ADDR = 0x0100;
     static const uint16_t PROG_BEGIN_ADDR = 0xFFFC;
-    static const uint16_t INT_ROUTINE_ADDR = 0xFFFE;
+    static const uint16_t IRQ_ROUTINE_ADDR = 0xFFFE;
 
     static const std::vector<inst_t> INSTRUCTIONS;
 
@@ -124,7 +124,7 @@ private:
         return bus.read(abs_addr);
     }
 
-    void interrupt();
+    void interrupt(uint16_t location);
 
     void branch();
 
