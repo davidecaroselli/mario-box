@@ -694,7 +694,7 @@ bool C6502::SBC() {
 
     set_status(C, diff > 0x00FF);
     set_status(Z, (diff & 0x00FF) == 0);
-    set_status(N, (diff & 0x8000) > 0);
+    set_status(N, (diff & 0x0080) > 0);
     set_status(V, (diff ^ (uint16_t) a) & (diff ^ fetched) & 0x0080);
 
     a = diff & 0x00FF;
