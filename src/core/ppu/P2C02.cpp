@@ -40,6 +40,7 @@ uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {
                 if (ppu_addr > 0x3F00) data = ppu_data_buffer;
 
                 ppu_addr++;
+                break;
             default:
                 Logger::err("invalid PPU address 0x%04X", addr);
                 break;
