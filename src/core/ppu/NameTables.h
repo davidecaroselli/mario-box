@@ -29,6 +29,12 @@ public:
 
     void bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) override;
 
+    // - Debug utilities ---------------------------------------------------
+
+    uint8_t at(uint8_t table, uint8_t x, uint8_t y) {
+        return data[table & 0x01][y * 32 + x];
+    }
+
 private:
     uint8_t data[2][1024] = {};
 

@@ -74,7 +74,7 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
                 break;
             case 0x2007: // DMA data
                 bus.write(ppu_addr, val);
-                ppu_addr += 1;
+                ppu_addr += control.increment_mode ? 32 : 1;
                 break;
             default:
                 Logger::err("invalid PPU address 0x%04X", addr);
@@ -94,10 +94,6 @@ void P2C02::clock() {
         status.vertical_blank = 1;
         if (control.enable_nmi) nmi_ = true;
     }
-
-    //if 0 <= scanline && scanline < frame.height && cycle < frame.width  {
-    //    frame.set(x: cycle, y: scanline, r: UInt8(drand48() * 255), g: UInt8(drand48() * 255), b: UInt8(drand48() * 255));
-    //}
 
     cycle++;
 

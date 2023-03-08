@@ -116,9 +116,9 @@ public:
 
 public:
     bool OnUserCreate() override {
-//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
+        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
-        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
 
@@ -171,7 +171,7 @@ public:
     void DrawPalettes(int x, int y) {
         for (int p = 0; p < 8; p++) {
             nes->ppu.palettes.render(p, palettes[p]);
-            DrawSprite(x + p * 36, y, &palettes[p]->sprite, 6);
+            DrawSprite(x + p * 33, y, &palettes[p]->sprite, 6);
         }
     }
 
@@ -189,10 +189,21 @@ public:
     void DrawUI() {
         Clear(olc::DARK_BLUE);
 
-        DrawCPU(416, 10);
-        DrawCode(416, 80);
-        DrawPalettes(416, 255);
-        DrawPatternTables(416, 280);
+        DrawCPU(530, 10);
+        DrawCode(530, 80);
+        DrawPalettes(530, 255);
+        DrawPatternTables(530, 280);
+
+        Palette palette = nes->ppu.palettes.get(palette_idx);
+
+        for (uint8_t y = 0; y < 30; ++y) {
+            for (uint8_t x = 0; x < 32; ++x) {
+                uint8_t tile = nes->ppu.name_tables.at(0, x, y);
+                nes->cartridge->chr.render_tile(0, tile, palette, &screen, x * 8, y * 8);
+            }
+        }
+
+        DrawSprite(10, 10, &screen.sprite, 2);
     }
 
     bool bEmulationRun = false;
@@ -241,8 +252,8 @@ public:
 
 int main() {
     Example demo;
-    int scale = 2;
-    if (demo.Construct(700, 420, scale, scale))
+    int scale = 1;
+    if (demo.Construct(786, 510, scale, scale))
         demo.Start();
 
     return 0;

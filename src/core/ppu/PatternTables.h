@@ -16,6 +16,8 @@ public:
     // - Debug utilities ---------------------------------------------------
 
     void render(uint8_t table, const Palette &palette, Canvas *canvas);
+
+    void render_tile(uint8_t table, uint8_t tile, const Palette &palette, Canvas *canvas, uint8_t x, uint8_t y);
 };
 
 
