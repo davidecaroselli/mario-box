@@ -13,6 +13,7 @@ add_executable(mariobox src/main.cpp
         src/core/Memory.cpp src/core/Memory.h
         src/core/Cartridge.cpp src/core/Cartridge.h
         src/core/Mapper.cpp src/core/Mapper.h
+        src/core/Controllers.cpp src/core/Controllers.h
         src/core/NES.cpp src/core/NES.h
 
         src/core/ppu/NESColor.h

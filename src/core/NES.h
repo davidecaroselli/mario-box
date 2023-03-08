@@ -11,11 +11,13 @@
 #include "Memory.h"
 #include "core/ppu/P2C02.h"
 #include "Cartridge.h"
+#include "Controllers.h"
 
 class NES {
 public:
     C6502 cpu;
     P2C02 ppu;
+    Controllers controllers;
 
     std::shared_ptr<Cartridge> cartridge = nullptr;
 

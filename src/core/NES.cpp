@@ -7,6 +7,7 @@
 
 NES::NES(Canvas *screen) : ppu(screen) {
     cpu.bus.connect(&ppu);
+    cpu.bus.connect(&controllers);
 }
 
 void NES::reset() {

@@ -206,7 +206,7 @@ public:
         DrawSprite(10, 10, &screen.sprite, 2);
     }
 
-    bool bEmulationRun = false;
+    bool bEmulationRun = true;
     float fResidualTime = 0;
     bool jump = true;
 
@@ -239,9 +239,20 @@ public:
             if (GetKey(olc::Key::F).bPressed) nes->frame();
         }
 
-        if (GetKey(olc::Key::SPACE).bPressed) bEmulationRun = !bEmulationRun;
-        if (GetKey(olc::Key::R).bPressed) nes->reset();
-        if (GetKey(olc::Key::P).bPressed) palette_idx = (palette_idx + 1) & 0x07;
+        if (GetKey(olc::Key::ESCAPE).bPressed) bEmulationRun = !bEmulationRun;
+        if (!bEmulationRun) {
+            if (GetKey(olc::Key::R).bPressed) nes->reset();
+            if (GetKey(olc::Key::P).bPressed) palette_idx = (palette_idx + 1) & 0x07;
+        }
+
+        if (GetKey(olc::Key::A).bHeld) nes->controllers.press(0, Button::Left);
+        if (GetKey(olc::Key::W).bHeld) nes->controllers.press(0, Button::Up);
+        if (GetKey(olc::Key::D).bHeld) nes->controllers.press(0, Button::Right);
+        if (GetKey(olc::Key::S).bHeld) nes->controllers.press(0, Button::Down);
+        if (GetKey(olc::Key::SPACE).bHeld) nes->controllers.press(0, Button::Select);
+        if (GetKey(olc::Key::ENTER).bHeld) nes->controllers.press(0, Button::Start);
+        if (GetKey(olc::Key::K).bHeld) nes->controllers.press(0, Button::A);
+        if (GetKey(olc::Key::L).bHeld) nes->controllers.press(0, Button::B);
 
         if (draw_ui) DrawUI();
 
