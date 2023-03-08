@@ -9,6 +9,7 @@
 #include "Palettes.h"
 #include "core/C6502.h"
 #include "platform/Canvas.h"
+#include "NameTables.h"
 
 union ppustatus_t {
     struct {
@@ -52,7 +53,7 @@ class P2C02: public SBDevice {
 public:
     SystemBus bus;
     Palettes palettes;
-    Memory name_tables;
+    NameTables name_tables;
 
     ppustatus_t status;
     ppumask_t mask;

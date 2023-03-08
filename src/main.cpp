@@ -117,8 +117,8 @@ public:
 public:
     bool OnUserCreate() override {
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
-        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
-//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
 
@@ -240,8 +240,6 @@ public:
 
 
 int main() {
-    // #4 - 31:08
-
     Example demo;
     int scale = 2;
     if (demo.Construct(700, 420, scale, scale))

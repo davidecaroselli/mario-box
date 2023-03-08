@@ -8,11 +8,7 @@
 #include "Mapper.h"
 #include "Memory.h"
 #include "core/ppu/PatternTables.h"
-
-enum Mirroring {
-    Vertical,
-    Horizontal
-};
+#include "core/ppu/NameTables.h"
 
 class Cartridge {
 public:

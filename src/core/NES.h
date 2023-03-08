@@ -36,6 +36,7 @@ public:
 
         this->cpu.bus.connect(&crt->prg);
         this->ppu.bus.connect(&crt->chr);
+        this->ppu.name_tables.mirroring = crt->mirroring;
         this->cartridge = std::shared_ptr<Cartridge>(crt);
 
         reset();

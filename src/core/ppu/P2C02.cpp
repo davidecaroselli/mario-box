@@ -5,7 +5,7 @@
 #include "P2C02.h"
 #include "Logger.h"
 
-P2C02::P2C02(Canvas *screen) : bus(SystemBus::PPU_BUS_ID), screen(screen), name_tables(2048, 0x2000, 0x2FFF) {
+P2C02::P2C02(Canvas *screen) : bus(SystemBus::PPU_BUS_ID), screen(screen) {
     assert(screen->width == 256);
     assert(screen->height == 240);
 
