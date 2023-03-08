@@ -215,7 +215,7 @@ bool C6502::ADC() {
 
     set_status(C, sum > 0x00FF);
     set_status(Z, (sum & 0x00FF) == 0);
-    set_status(N, (sum & 0x8000) > 0);
+    set_status(N, (sum & 0x0080) > 0);
     set_status(V, (~((uint16_t) a ^ fetched) & ((uint16_t) a ^ sum)) & 0x0080);
 
     a = sum & 0x00FF;
