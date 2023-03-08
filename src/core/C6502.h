@@ -78,7 +78,7 @@ public:
 
     C6502();
 
-    const uint8_t cycles() const {
+    [[nodiscard]] uint8_t cycles() const {
         return cycles_;
     }
 
