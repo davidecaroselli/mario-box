@@ -245,14 +245,14 @@ public:
             if (GetKey(olc::Key::P).bPressed) palette_idx = (palette_idx + 1) & 0x07;
         }
 
-        if (GetKey(olc::Key::A).bHeld) nes->controllers.press(0, Button::Left);
-        if (GetKey(olc::Key::W).bHeld) nes->controllers.press(0, Button::Up);
-        if (GetKey(olc::Key::D).bHeld) nes->controllers.press(0, Button::Right);
-        if (GetKey(olc::Key::S).bHeld) nes->controllers.press(0, Button::Down);
-        if (GetKey(olc::Key::SPACE).bHeld) nes->controllers.press(0, Button::Select);
-        if (GetKey(olc::Key::ENTER).bHeld) nes->controllers.press(0, Button::Start);
-        if (GetKey(olc::Key::K).bHeld) nes->controllers.press(0, Button::A);
-        if (GetKey(olc::Key::L).bHeld) nes->controllers.press(0, Button::B);
+        nes->controllers.button(0, Button::Left, GetKey(olc::Key::A).bHeld);
+        nes->controllers.button(0, Button::Up, GetKey(olc::Key::W).bHeld);
+        nes->controllers.button(0, Button::Right, GetKey(olc::Key::D).bHeld);
+        nes->controllers.button(0, Button::Down, GetKey(olc::Key::S).bHeld);
+        nes->controllers.button(0, Button::Select, GetKey(olc::Key::SPACE).bHeld);
+        nes->controllers.button(0, Button::Start, GetKey(olc::Key::ENTER).bHeld);
+        nes->controllers.button(0, Button::A, GetKey(olc::Key::K).bHeld);
+        nes->controllers.button(0, Button::B, GetKey(olc::Key::L).bHeld);
 
         if (draw_ui) DrawUI();
 

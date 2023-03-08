@@ -21,8 +21,11 @@ enum Button {
 
 class Controllers : public SBDevice {
 public:
-    inline void press(uint8_t controller, Button button) {
-        buttons[controller & 0x01] |= button;
+    inline void button(uint8_t controller, Button button, bool pressed) {
+        if (pressed)
+            buttons[controller & 0x01] |= button;
+        else
+            buttons[controller & 0x01] &= ~button;
     }
 
     uint16_t bus_begin(uint8_t bus_id) override {
