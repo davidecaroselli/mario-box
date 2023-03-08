@@ -174,7 +174,7 @@ bool C6502::IND_() {
     uint16_t lo = bus.read(addr);
     uint16_t hi;
     if (lop == 0x00FF)  // Simulate page boundary hardware bug
-        hi = bus.read(addr & 0xFF);
+        hi = bus.read(addr & 0xFF00);
     else
         hi = bus.read(addr + 1);
 
