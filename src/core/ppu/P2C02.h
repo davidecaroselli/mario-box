@@ -37,8 +37,7 @@ union ppumask_t {
 
 union ppucontrol_t {
     struct {
-        uint8_t nametable_x: 1;
-        uint8_t nametable_y: 1;
+        uint8_t nametable: 2;
         uint8_t increment_mode: 1;
         uint8_t pattern_sprite: 1;
         uint8_t pattern_background: 1;
@@ -94,9 +93,23 @@ private:
     int scanline = 0;
     bool frame_complete = false;
 
-    bool     ppu_lsb_addr = false;  // first read is for MSB
-    uint16_t ppu_addr = 0;
-    uint8_t  ppu_data_buffer = 0;
+    union ppu_reg_t {
+        struct {
+            uint16_t coarse_x: 5;
+            uint16_t coarse_y: 5;
+            uint16_t nametable: 2;
+            uint16_t fine_y: 3;
+            uint16_t _: 1;
+        };
+
+        uint16_t reg;
+    };
+
+    bool      first_write_toggle = true;
+    ppu_reg_t vram_addr = {0x0000};
+    ppu_reg_t t_vram_addr = {0x0000};
+    uint8_t   fine_x = 0x00;
+    uint8_t   ppu_data_buffer = 0;
 
     bool nmi_ = false;
 };

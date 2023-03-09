@@ -116,8 +116,9 @@ public:
 
 public:
     bool OnUserCreate() override {
-        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
-//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
+        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/iceclimber.nes");
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
@@ -199,7 +200,7 @@ public:
         for (uint8_t y = 0; y < 30; ++y) {
             for (uint8_t x = 0; x < 32; ++x) {
                 uint8_t tile = nes->ppu.name_tables.at(0, x, y);
-                nes->cartridge->chr.render_tile(0, tile, palette, &screen, x * 8, y * 8);
+                nes->cartridge->chr.render_tile(1, tile, palette, &screen, x * 8, y * 8);
             }
         }
 

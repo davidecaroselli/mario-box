@@ -24,22 +24,20 @@ uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {
             case 0x2002: // status
                 data = (status.reg & 0xE0) | (ppu_data_buffer & 0x1F); // simulating dirty buffer on unused status bits
                 status.vertical_blank = 0;
-                ppu_lsb_addr = false;
+                first_write_toggle = true;
                 break;
             case 0x2003: // OAM address
             case 0x2004: // OAM data
             case 0x2005: // scroll
                 break;
-            case 0x2006: // DMA addr
+            case 0x2006: // VRAM addr
                 Logger::err("attempting to read from PPU DMA address");
                 break;
-            case 0x2007: // DMA data
+            case 0x2007: // VRAM data
                 data = ppu_data_buffer;
-                ppu_data_buffer = bus.read(ppu_addr);
-                // no buffered read for palette
-                if (ppu_addr > 0x3F00) data = ppu_data_buffer;
-
-                ppu_addr++;
+                ppu_data_buffer = bus.read(vram_addr.reg);
+                if (vram_addr.reg > 0x3F00) data = ppu_data_buffer; // no buffered read for palette
+                vram_addr.reg += control.increment_mode ? 32 : 1;
                 break;
             default:
                 Logger::err("invalid PPU address 0x%04X", addr);
@@ -55,6 +53,7 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
         switch (addr) {
             case 0x2000:  // control
                 control.reg = val;
+                t_vram_addr.nametable = control.nametable;
                 break;
             case 0x2001: // mask
                 mask.reg = val;
@@ -65,17 +64,29 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
             case 0x2003: // OAM address
             case 0x2004: // OAM data
             case 0x2005: // scroll
+                if (first_write_toggle) {
+                    t_vram_addr.coarse_x = (val >> 3) & 0x1F;
+                    fine_x = val & 0x07;
+                } else {
+                    t_vram_addr.coarse_y = (val >> 3) & 0x1F;
+                    t_vram_addr.fine_y = val & 0x07;
+                }
+
+                first_write_toggle = !first_write_toggle;
                 break;
-            case 0x2006: // DMA addr
-                if (ppu_lsb_addr)
-                    ppu_addr = (ppu_addr & 0xFF00) | val;
-                else
-                    ppu_addr = (ppu_addr & 0x00FF) | (((uint16_t) val) << 8);
-                ppu_lsb_addr = !ppu_lsb_addr;
+            case 0x2006: // VRAM addr
+                if (first_write_toggle) {
+                    t_vram_addr.reg = (t_vram_addr.reg & 0x00FF) | ((uint16_t) (val & 0x3F) << 8);
+                } else {
+                    t_vram_addr.reg = (t_vram_addr.reg & 0xFF00) | (uint16_t) val;
+                    vram_addr.reg = t_vram_addr.reg;
+                }
+
+                first_write_toggle = !first_write_toggle;
                 break;
-            case 0x2007: // DMA data
-                bus.write(ppu_addr, val);
-                ppu_addr += control.increment_mode ? 32 : 1;
+            case 0x2007: // VRAM data
+                bus.write(vram_addr.reg, val);
+                vram_addr.reg += control.increment_mode ? 32 : 1;
                 break;
             default:
                 Logger::err("invalid PPU address 0x%04X", addr);
@@ -85,6 +96,8 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
 }
 
 void P2C02::clock() {
+    // https://www.nesdev.org/wiki/PPU_scrolling#At_dot_256_of_each_scanline
+
     frame_complete = false;
 
     if (scanline == -1 && cycle == 1) {
