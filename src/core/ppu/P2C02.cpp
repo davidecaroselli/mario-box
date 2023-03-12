@@ -99,67 +99,8 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
 void P2C02::clock() {
     frame_complete = false;
 
-    if (scanline == 0 && cycle == 0) {
-        if (odd_frame) cycle = 1;  // skip first cycle in off frames
-        odd_frame = !odd_frame;
-    }
-
     scroll();
-
-    // - Background rendering ------------------------------------------------------------------------------------------
-
-    if (scanline >= -1 && scanline < 240) {
-        if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
-            update_background_shift_regs();
-
-            switch ((cycle - 1) % 8) {
-                case 0:
-                    load_background_shift_regs();
-                    ppu_latch_tile = read_tile();
-                    break;
-                case 2:
-                    ppu_latch_attr = read_tile_attr();
-                    // attrib = (bottom_right << 6) | (bottom_left << 4) | (top_right << 2) | (top_left << 0)
-                    if (vram_addr.coarse_y & 0x02) ppu_latch_attr >>= 4;
-                    if (vram_addr.coarse_x & 0x02) ppu_latch_attr >>= 2;
-                    ppu_latch_attr &= 0x03;
-                    break;
-                case 4:
-                    ppu_latch_chr_lsb = read_pattern(true);
-                    break;
-                case 6:
-                    ppu_latch_chr_msb = read_pattern(false);
-                    break;
-            }
-        }
-
-        if (cycle == 257) {
-            load_background_shift_regs();
-        } else if (cycle == 338 || cycle == 340) {
-            ppu_latch_tile = read_tile();
-        }
-    }
-
-    // render pixel
-    uint8_t bg_pixel = 0;
-    uint8_t bg_palette = 0;
-
-    if (mask.render_background) {
-        uint16_t bitmask = 0x8000 >> fine_x;
-
-        uint8_t bit0 = (ppu_shreg_chr_lsb & bitmask) ? 0x01 : 0x00;
-        uint8_t bit1 = (ppu_shreg_chr_msb & bitmask) ? 0x01 : 0x00;
-        bg_pixel = (bit1 << 1) | bit0;
-
-        uint8_t pal_bit0 = (ppu_shreg_chr_attrib_lsb & bitmask) ? 0x01 : 0x00;
-        uint8_t pal_bit1 = (ppu_shreg_chr_attrib_msb & bitmask) ? 0x01 : 0x00;
-        bg_palette = (pal_bit1 << 1) | pal_bit0;
-    }
-
-    if (0 <= scanline && scanline < 240 && 0 <= cycle && cycle < 256)
-        screen->set(cycle - 1, scanline, this->palettes.color_at(bg_palette, bg_pixel));
-
-    // - Loop automation -----------------------------------------------------------------------------------------------
+    render_background();
 
     if (scanline == -1 && cycle == 1) {
         status.vertical_blank = 0;
@@ -169,6 +110,8 @@ void P2C02::clock() {
         status.vertical_blank = 1;
         if (control.enable_nmi) nmi_ = true;
     }
+
+    // - Loop automation -----------------------------------------------------------------------------------------------
 
     cycle++;
 
@@ -181,6 +124,11 @@ void P2C02::clock() {
             frame_complete = true;
         }
     }
+
+    if (scanline == 0 && cycle == 0) {
+        if (odd_frame) cycle = 1;  // skip first cycle in odd frames
+        odd_frame = !odd_frame;
+    }
 }
 
 uint8_t P2C02::read_tile() {
@@ -188,32 +136,21 @@ uint8_t P2C02::read_tile() {
 }
 
 uint8_t P2C02::read_tile_attr() {
-    return bus.read(0x23C0
-                    | (vram_addr.reg & 0x0C00)  // nametable
-                    | ((vram_addr.reg >> 4) & 0x38)  // coarse y
-                    | ((vram_addr.reg >> 2) & 0x07));  // coarse x
+    uint8_t val = bus.read(0x23C0
+                           | (vram_addr.reg & 0x0C00)  // nametable
+                           | ((vram_addr.reg >> 4) & 0x38)  // coarse y
+                           | ((vram_addr.reg >> 2) & 0x07));  // coarse x
+
+    // attrib = (bottom_right << 6) | (bottom_left << 4) | (top_right << 2) | (top_left << 0)
+    if (vram_addr.coarse_y & 0x02) val >>= 4;
+    if (vram_addr.coarse_x & 0x02) val >>= 2;
+    return val & 0x03;
 }
 
 uint8_t P2C02::read_pattern(bool lsb) {
-    uint16_t addr = (control.pattern_background << 12) | (ppu_latch_tile << 4) | vram_addr.fine_y;
+    uint16_t addr = (control.pattern_background << 12) | (lr_tile << 4) | vram_addr.fine_y;
     if (!lsb) addr += 8;
     return bus.read(addr);
-}
-
-void P2C02::load_background_shift_regs() {
-    ppu_shreg_chr_lsb = (ppu_shreg_chr_lsb & 0xFF00) | ppu_latch_chr_lsb;
-    ppu_shreg_chr_msb = (ppu_shreg_chr_msb & 0xFF00) | ppu_latch_chr_msb;
-    ppu_shreg_chr_attrib_lsb = (ppu_shreg_chr_attrib_lsb & 0xFF00) | ((ppu_latch_attr & 0x01) ? 0xFF : 0x00);
-    ppu_shreg_chr_attrib_msb = (ppu_shreg_chr_attrib_msb & 0xFF00) | ((ppu_latch_attr & 0x02) ? 0xFF : 0x00);
-}
-
-void P2C02::update_background_shift_regs() {
-    if (mask.render_background) {
-        ppu_shreg_chr_lsb <<= 1;
-        ppu_shreg_chr_msb <<= 1;
-        ppu_shreg_chr_attrib_lsb <<= 1;
-        ppu_shreg_chr_attrib_msb <<= 1;
-    }
 }
 
 void P2C02::scroll() {
@@ -254,5 +191,66 @@ void P2C02::scroll() {
 }
 
 void P2C02::render_background() {
+    if (-1 <= scanline && scanline < 240) {  // visible scan-lines and pre-render scanline
 
+        // The shifters are reloaded during ticks 9, 17, 25, ..., 257.
+        if (cycle > 1 && cycle % 8 == 1) {
+            // load background shift registers
+            sl_chr_lsb = (sl_chr_lsb & 0xFF00) | lr_chr_lsb;
+            sl_chr_msb = (sl_chr_msb & 0xFF00) | lr_chr_msb;
+            sl_chr_attr_lsb = (sl_chr_attr_lsb & 0xFF00) | ((lr_tile_attr & 0x01) ? 0xFF : 0x00);
+            sl_chr_attr_msb = (sl_chr_attr_msb & 0xFF00) | ((lr_tile_attr & 0x02) ? 0xFF : 0x00);
+        }
+
+        // read latch registers
+        if (1 <= cycle && cycle <= 337) {
+
+            // update shift registers
+            if (cycle > 1 && mask.render_background) {
+                sl_chr_lsb <<= 1;
+                sl_chr_msb <<= 1;
+                sl_chr_attr_lsb <<= 1;
+                sl_chr_attr_msb <<= 1;
+            }
+
+            switch (cycle % 8) {
+                case 2:
+                    lr_tile = read_tile();
+                    break;
+                case 4:
+                    lr_tile_attr = read_tile_attr();
+                    break;
+                case 6:
+                    lr_chr_lsb = read_pattern(true);
+                    break;
+                case 0:
+                    lr_chr_msb = read_pattern(false);
+                    break;
+            }
+        } else if (cycle == 338 || cycle == 340) {
+            lr_tile = read_tile();
+        }
+    }
+
+    // put pixel on screen
+    if (0 <= scanline && scanline < 240 &&
+        1 <= cycle && cycle <= 256) {
+
+        uint8_t bg_pixel = 0;  
+        uint8_t bg_palette = 0;
+
+        if (mask.render_background) {
+            uint16_t bitmask = 0x8000 >> fine_x;
+
+            uint8_t bit0 = (sl_chr_lsb & bitmask) ? 0x01 : 0x00;
+            uint8_t bit1 = (sl_chr_msb & bitmask) ? 0x01 : 0x00;
+            bg_pixel = (bit1 << 1) | bit0;
+
+            uint8_t pal_bit0 = (sl_chr_attr_lsb & bitmask) ? 0x01 : 0x00;
+            uint8_t pal_bit1 = (sl_chr_attr_msb & bitmask) ? 0x01 : 0x00;
+            bg_palette = (pal_bit1 << 1) | pal_bit0;
+        }
+
+        screen->set(cycle - 1, scanline, this->palettes.color_at(bg_palette, bg_pixel));
+    }
 }

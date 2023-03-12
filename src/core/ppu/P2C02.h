@@ -118,15 +118,17 @@ private:
 
     bool nmi_ = false;
 
-    uint16_t ppu_latch_tile = 0;
-    uint16_t ppu_latch_attr = 0;
-    uint16_t ppu_latch_chr_lsb = 0;
-    uint16_t ppu_latch_chr_msb = 0;
+    // latch registers
+    uint16_t lr_tile = 0;
+    uint16_t lr_tile_attr = 0;
+    uint16_t lr_chr_lsb = 0;
+    uint16_t lr_chr_msb = 0;
 
-    uint16_t ppu_shreg_chr_lsb = 0;
-    uint16_t ppu_shreg_chr_msb = 0;
-    uint16_t ppu_shreg_chr_attrib_lsb = 0;
-    uint16_t ppu_shreg_chr_attrib_msb = 0;
+    // shift registers
+    uint16_t sl_chr_lsb = 0;
+    uint16_t sl_chr_msb = 0;
+    uint16_t sl_chr_attr_lsb = 0;
+    uint16_t sl_chr_attr_msb = 0;
 
     void render_background();
 
@@ -135,11 +137,6 @@ private:
     uint8_t read_tile_attr();
 
     uint8_t read_pattern(bool lsb);
-
-    void load_background_shift_regs();
-
-    void update_background_shift_regs();
-
 
 };
 

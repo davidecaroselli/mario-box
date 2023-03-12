@@ -117,8 +117,8 @@ public:
 public:
     bool OnUserCreate() override {
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
-        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
-//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/iceclimber.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/iceclimber.nes");
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
