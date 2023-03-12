@@ -5,8 +5,9 @@
 #include "NES.h"
 #include "olcPixelGameEngine.h"
 
-NES::NES(Canvas *screen) : ppu(screen) {
+NES::NES(Canvas *screen) : ppu(screen), dma(&cpu, &ppu) {
     cpu.bus.connect(&ppu);
+    cpu.bus.connect(&dma);
     cpu.bus.connect(&controllers);
 }
 
@@ -26,7 +27,11 @@ void NES::step() {
 
 void NES::clock() {
     if (ticks % 3 == 0) {
-        cpu.clock();
+        if (dma.is_running()) {
+            dma.clock(ticks);
+        } else {
+            cpu.clock();
+        }
     }
     ppu.clock();
 

@@ -49,7 +49,25 @@ union ppucontrol_t {
     uint8_t reg = 0;
 };
 
-class P2C02: public SBDevice {
+union oam_attr_t {
+    struct {
+        uint8_t palette: 2;
+        uint8_t _: 3;
+        uint8_t priority: 1;
+        uint8_t flip_h: 1;
+        uint8_t flip_v: 1;
+    };
+    uint8_t val;
+};
+
+struct oam_t {
+    uint8_t y;
+    uint8_t id;
+    oam_attr_t attr;
+    uint8_t x;
+};
+
+class P2C02 : public SBDevice {
 public:
     SystemBus bus;
     Palettes palettes;
@@ -58,6 +76,9 @@ public:
     ppustatus_t status;
     ppumask_t mask;
     ppucontrol_t control;
+
+    oam_t sprites[64];
+    uint8_t *sprites_ptr = (uint8_t *) &sprites;
 
     explicit P2C02(Canvas *screen);
 
@@ -107,12 +128,12 @@ private:
         uint16_t reg;
     };
 
-    bool      odd_frame = false;
-    bool      first_write_toggle = true;
+    bool odd_frame = false;
+    bool first_write_toggle = true;
     ppu_reg_t vram_addr = {0x0000};
     ppu_reg_t t_vram_addr = {0x0000};
-    uint8_t   fine_x = 0x00;
-    uint8_t   ppu_data_buffer = 0;
+    uint8_t fine_x = 0x00;
+    uint8_t ppu_data_buffer = 0;
 
     void scroll();
 
@@ -138,6 +159,9 @@ private:
 
     uint8_t read_pattern(bool lsb);
 
+    // sprites
+
+    uint8_t oam_addr = 0;
 };
 
 

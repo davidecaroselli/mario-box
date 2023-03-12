@@ -21,6 +21,7 @@ add_executable(mariobox src/main.cpp
         src/core/ppu/Palettes.cpp src/core/ppu/Palettes.h
         src/core/ppu/PatternTables.cpp src/core/ppu/PatternTables.h
         src/core/ppu/NameTables.cpp src/core/ppu/NameTables.h
+        src/core/DMA.cpp src/core/DMA.h
 
         src/platform/Canvas.h
 

@@ -109,7 +109,7 @@ public:
     NES *nes;
     ASM *code = nullptr;
 
-    Example(): screen(256, 240) {
+    Example() : screen(256, 240) {
         nes = new NES(&screen);
         sAppName = "Example";
     }
@@ -133,6 +133,17 @@ public:
         for (auto &line: code->snippet(nes->cpu.prg_counter, 8)) {
             DrawString(x, y + i * 10, line, i == 8 ? olc::WHITE : olc::GREY);
             i++;
+        }
+    }
+
+    void DrawSprites(int x, int y) {
+        for (int i = 0; i < 26; i++) {
+            oam_t &sprite = nes->ppu.sprites[i];
+            std::stringstream line;
+            line << i << ": " << hex(sprite.id, 2)
+                 << " @" << (int)sprite.x << "," << (int)sprite.y
+                 << " [" << hex(sprite.attr.val, 2) << "]";
+            DrawString(x, y + i * 10, line.str(), olc::WHITE);
         }
     }
 
@@ -169,31 +180,34 @@ public:
     olcCanvas p6 = olcCanvas(4, 1);
     olcCanvas p7 = olcCanvas(4, 1);
     std::vector<olcCanvas *> palettes = {&p0, &p1, &p2, &p3, &p4, &p5, &p6, &p7};
+
     void DrawPalettes(int x, int y) {
         for (int p = 0; p < 8; p++) {
             nes->ppu.palettes.render(p, palettes[p]);
-            DrawSprite(x + p * 33, y, &palettes[p]->sprite, 6);
+            DrawSprite(x + p * 34, y, &palettes[p]->sprite, 6);
         }
     }
 
     olcCanvas chr0 = olcCanvas(128, 128);
     olcCanvas chr1 = olcCanvas(128, 128);
     uint8_t palette_idx = 0;
+
     void DrawPatternTables(int x, int y) {
         Palette palette = nes->ppu.palettes.get(palette_idx);
         nes->cartridge->chr.render(0, palette, &chr0);
         nes->cartridge->chr.render(1, palette, &chr1);
         DrawSprite(x, y, &chr0.sprite);
-        DrawSprite(x + 132, y, &chr1.sprite);
+        DrawSprite(x + 135, y, &chr1.sprite);
     }
 
     void DrawUI() {
         Clear(olc::DARK_BLUE);
 
         DrawCPU(530, 10);
-        DrawCode(530, 80);
-        DrawPalettes(530, 255);
-        DrawPatternTables(530, 280);
+        //DrawCode(530, 80);
+        DrawSprites(530, 80);
+        DrawPalettes(530, 350);
+        DrawPatternTables(530, 360);
 
 //        Palette palette = nes->ppu.palettes.get(palette_idx);
 //
@@ -265,7 +279,7 @@ public:
 int main() {
     Example demo;
     int scale = 1;
-    if (demo.Construct(786, 510, scale, scale))
+    if (demo.Construct(800, 510, scale, scale))
         demo.Start();
 
     return 0;

@@ -27,7 +27,10 @@ uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {
                 first_write_toggle = true;
                 break;
             case 0x2003: // OAM address
+                break;
             case 0x2004: // OAM data
+                data = sprites_ptr[oam_addr];
+                break;
             case 0x2005: // scroll
                 break;
             case 0x2006: // VRAM addr
@@ -63,7 +66,11 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
                 Logger::warn("(PPU) attempting to write to PPU status");
                 break;
             case 0x2003: // OAM address
+                oam_addr = val;
+                break;
             case 0x2004: // OAM data
+                sprites_ptr[oam_addr++] = val;
+                break;
             case 0x2005: // scroll
                 if (first_write_toggle) {
                     t_vram_addr.coarse_x = (val >> 3) & 0x1F;
@@ -109,6 +116,10 @@ void P2C02::clock() {
     if (scanline == 241 && cycle == 1) {
         status.vertical_blank = 1;
         if (control.enable_nmi) nmi_ = true;
+    }
+
+    if (-1 <= scanline && scanline < 240 && 257 <= cycle && cycle <= 320) {
+        oam_addr = 0;
     }
 
     // - Loop automation -----------------------------------------------------------------------------------------------
@@ -236,7 +247,7 @@ void P2C02::render_background() {
     if (0 <= scanline && scanline < 240 &&
         1 <= cycle && cycle <= 256) {
 
-        uint8_t bg_pixel = 0;  
+        uint8_t bg_pixel = 0;
         uint8_t bg_palette = 0;
 
         if (mask.render_background) {
