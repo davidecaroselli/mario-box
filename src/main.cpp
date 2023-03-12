@@ -195,14 +195,14 @@ public:
         DrawPalettes(530, 255);
         DrawPatternTables(530, 280);
 
-        Palette palette = nes->ppu.palettes.get(palette_idx);
-
-        for (uint8_t y = 0; y < 30; ++y) {
-            for (uint8_t x = 0; x < 32; ++x) {
-                uint8_t tile = nes->ppu.name_tables.at(0, x, y);
-                nes->cartridge->chr.render_tile(1, tile, palette, &screen, x * 8, y * 8);
-            }
-        }
+//        Palette palette = nes->ppu.palettes.get(palette_idx);
+//
+//        for (uint8_t y = 0; y < 30; ++y) {
+//            for (uint8_t x = 0; x < 32; ++x) {
+//                uint8_t tile = nes->ppu.name_tables.at(0, x, y);
+//                nes->cartridge->chr.render_tile(1, tile, palette, &screen, x * 8, y * 8);
+//            }
+//        }
 
         DrawSprite(10, 10, &screen.sprite, 2);
     }

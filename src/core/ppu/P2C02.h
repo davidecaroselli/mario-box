@@ -37,7 +37,8 @@ union ppumask_t {
 
 union ppucontrol_t {
     struct {
-        uint8_t nametable: 2;
+        uint8_t nametable_h: 1;
+        uint8_t nametable_v: 1;
         uint8_t increment_mode: 1;
         uint8_t pattern_sprite: 1;
         uint8_t pattern_background: 1;
@@ -97,7 +98,8 @@ private:
         struct {
             uint16_t coarse_x: 5;
             uint16_t coarse_y: 5;
-            uint16_t nametable: 2;
+            uint8_t nametable_h: 1;
+            uint8_t nametable_v: 1;
             uint16_t fine_y: 3;
             uint16_t _: 1;
         };
@@ -112,6 +114,36 @@ private:
     uint8_t   ppu_data_buffer = 0;
 
     bool nmi_ = false;
+
+    uint16_t ppu_latch_tile = 0;
+    uint16_t ppu_latch_attr = 0;
+    uint16_t ppu_latch_chr_lsb = 0;
+    uint16_t ppu_latch_chr_msb = 0;
+
+    uint16_t ppu_shreg_chr_lsb = 0;
+    uint16_t ppu_shreg_chr_msb = 0;
+    uint16_t ppu_shreg_chr_attrib_lsb = 0;
+    uint16_t ppu_shreg_chr_attrib_msb = 0;
+
+    void coarse_x_incr();
+
+    void y_incr();
+
+    uint8_t read_tile();
+
+    uint8_t read_tile_attr();
+
+    uint8_t read_pattern(bool lsb);
+
+    [[nodiscard]] inline bool is_rendering_enabled() const {
+        return mask.render_background || mask.render_sprites;
+    }
+
+    void load_background_shift_regs();
+
+    void update_background_shift_regs();
+
+
 };
 
 

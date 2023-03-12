@@ -29,10 +29,11 @@ public:
 
     Palette get(uint8_t palette);
 
+    const NESColor *color_at(uint8_t palette, uint8_t offset);
+
 private:
     uint8_t data[32]{};
 
-    const NESColor *color_at(uint8_t palette, uint8_t offset);
 };
 
 
