@@ -96,46 +96,19 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
     }
 }
 
-void P2C02::coarse_x_incr() {
-    if (is_rendering_enabled()) {
-        if (vram_addr.coarse_x == 31) {
-            vram_addr.coarse_x = 0;
-            vram_addr.nametable_h = ~vram_addr.nametable_h;
-        } else {
-            vram_addr.coarse_x++;
-        }
-    }
-}
-
-void P2C02::y_incr() {
-    if (is_rendering_enabled()) {
-        if (vram_addr.fine_y < 7) {
-            vram_addr.fine_y++;
-        } else {
-            vram_addr.fine_y = 0;
-            if (vram_addr.coarse_y == 29) {
-                vram_addr.coarse_y = 0;
-                vram_addr.nametable_v = ~vram_addr.nametable_v;
-            } else if (vram_addr.coarse_y == 31) {
-                vram_addr.coarse_y = 0;
-            } else {
-                vram_addr.coarse_y++;
-            }
-        }
-    }
-}
-
 void P2C02::clock() {
     frame_complete = false;
+
+    if (scanline == 0 && cycle == 0) {
+        if (odd_frame) cycle = 1;  // skip first cycle in off frames
+        odd_frame = !odd_frame;
+    }
+
+    scroll();
 
     // - Background rendering ------------------------------------------------------------------------------------------
 
     if (scanline >= -1 && scanline < 240) {
-        if (scanline == 0 && cycle == 0) {
-            // "Odd Frame" cycle skip
-            cycle = 1;
-        }
-
         if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
             update_background_shift_regs();
 
@@ -157,28 +130,13 @@ void P2C02::clock() {
                 case 6:
                     ppu_latch_chr_msb = read_pattern(false);
                     break;
-                case 7:
-                    coarse_x_incr();
-                    break;
             }
         }
 
-        if (cycle == 256) {
-            y_incr();
-        } else if (cycle == 257) {
+        if (cycle == 257) {
             load_background_shift_regs();
-            if (is_rendering_enabled()) {
-                vram_addr.coarse_x = t_vram_addr.coarse_x;
-                vram_addr.nametable_h = t_vram_addr.nametable_h;
-            }
         } else if (cycle == 338 || cycle == 340) {
             ppu_latch_tile = read_tile();
-        } else if (scanline == -1 && (280 <= cycle && cycle <= 304)) {
-            if (is_rendering_enabled()) {
-                vram_addr.coarse_y = t_vram_addr.coarse_y;
-                vram_addr.nametable_v = t_vram_addr.nametable_v;
-                vram_addr.fine_y = t_vram_addr.fine_y;
-            }
         }
     }
 
@@ -256,4 +214,45 @@ void P2C02::update_background_shift_regs() {
         ppu_shreg_chr_attrib_lsb <<= 1;
         ppu_shreg_chr_attrib_msb <<= 1;
     }
+}
+
+void P2C02::scroll() {
+    if (!mask.render_background && !mask.render_sprites) return;
+    if (scanline > 239) return;
+
+    if (cycle == 256) {  // vertical increment
+        if (vram_addr.fine_y < 7) {
+            vram_addr.fine_y++;
+        } else {
+            vram_addr.fine_y = 0;
+            if (vram_addr.coarse_y == 29) {
+                vram_addr.coarse_y = 0;
+                vram_addr.nametable_v = ~vram_addr.nametable_v;
+            } else if (vram_addr.coarse_y == 31) {
+                vram_addr.coarse_y = 0;
+            } else {
+                vram_addr.coarse_y++;
+            }
+        }
+    } else if (cycle == 257) {  // copy horizontal position from t to v
+        vram_addr.coarse_x = t_vram_addr.coarse_x;
+        vram_addr.nametable_h = t_vram_addr.nametable_h;
+    } else if (280 <= cycle && cycle <= 304 && scanline == -1) {  // repeatedly copy the vertical bits from t to v
+        vram_addr.coarse_y = t_vram_addr.coarse_y;
+        vram_addr.nametable_v = t_vram_addr.nametable_v;
+        vram_addr.fine_y = t_vram_addr.fine_y;
+    }
+
+    if ((cycle >= 328 || cycle <= 256) && cycle != 0 && cycle % 8 == 0) {  //  increment the horizontal position in v
+        if (vram_addr.coarse_x == 31) {
+            vram_addr.coarse_x = 0;
+            vram_addr.nametable_h = ~vram_addr.nametable_h;
+        } else {
+            vram_addr.coarse_x++;
+        }
+    }
+}
+
+void P2C02::render_background() {
+
 }

@@ -107,11 +107,14 @@ private:
         uint16_t reg;
     };
 
+    bool      odd_frame = false;
     bool      first_write_toggle = true;
     ppu_reg_t vram_addr = {0x0000};
     ppu_reg_t t_vram_addr = {0x0000};
     uint8_t   fine_x = 0x00;
     uint8_t   ppu_data_buffer = 0;
+
+    void scroll();
 
     bool nmi_ = false;
 
@@ -125,19 +128,13 @@ private:
     uint16_t ppu_shreg_chr_attrib_lsb = 0;
     uint16_t ppu_shreg_chr_attrib_msb = 0;
 
-    void coarse_x_incr();
-
-    void y_incr();
+    void render_background();
 
     uint8_t read_tile();
 
     uint8_t read_tile_attr();
 
     uint8_t read_pattern(bool lsb);
-
-    [[nodiscard]] inline bool is_rendering_enabled() const {
-        return mask.render_background || mask.render_sprites;
-    }
 
     void load_background_shift_regs();
 
