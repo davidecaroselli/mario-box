@@ -77,7 +77,7 @@ public:
     ppumask_t mask;
     ppucontrol_t control;
 
-    oam_t sprites[64];
+    oam_t sprites[64] = {};
     uint8_t *sprites_ptr = (uint8_t *) &sprites;
 
     explicit P2C02(Canvas *screen);
@@ -151,7 +151,7 @@ private:
     uint16_t sl_chr_attr_lsb = 0;
     uint16_t sl_chr_attr_msb = 0;
 
-    void render_background();
+    void render_background(uint8_t *out_pixel, uint8_t *out_palette);
 
     uint8_t read_tile();
 
@@ -162,6 +162,16 @@ private:
     // sprites
 
     uint8_t oam_addr = 0;
+    oam_t visible_sprites[8] = {};
+    uint8_t visible_sprites_count = 0;
+    uint8_t sr_vsprite_lsb[8] = {};
+    uint8_t sr_vsprite_msb[8] = {};
+
+    [[nodiscard]] inline uint8_t get_sprite_size() const {
+        return control.sprite_size == 1 ? 16 : 8;
+    }
+
+    void render_sprites(uint8_t *out_pixel, uint8_t *out_palette, uint8_t *out_priority);
 };
 
 

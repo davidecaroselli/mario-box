@@ -5,6 +5,14 @@
 #include "P2C02.h"
 #include "Logger.h"
 
+// https://stackoverflow.com/a/2602885
+uint8_t flip_horizontal(uint8_t b) {
+    b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+    return b;
+}
+
 P2C02::P2C02(Canvas *screen) : bus(SystemBus::PPU_BUS_ID), screen(screen) {
     assert(screen->width == 256);
     assert(screen->height == 240);
@@ -106,11 +114,40 @@ void P2C02::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
 void P2C02::clock() {
     frame_complete = false;
 
-    scroll();
-    render_background();
-
     if (scanline == -1 && cycle == 1) {
         status.vertical_blank = 0;
+        status.sprite_overflow = 0;
+    }
+
+    scroll();
+
+    uint8_t bg_pixel = 0, bg_palette = 0;
+    render_background(&bg_pixel, &bg_palette);
+
+    uint8_t fg_pixel = 0, fg_palette = 0, fg_priority = 0;
+    render_sprites(&fg_pixel, &fg_palette, &fg_priority);
+
+    if (0 <= scanline && scanline <= 239 &&
+        1 <= cycle && cycle <= 256) {
+
+        uint8_t pixel = 0, palette = 0;
+        if (bg_pixel == 0 && fg_pixel > 0) {
+            pixel = fg_pixel;
+            palette = fg_palette;
+        } else if (bg_pixel > 0 && fg_pixel == 0) {
+            pixel = bg_pixel;
+            palette = bg_palette;
+        } else if (bg_pixel > 0 && fg_pixel > 0) {
+            if (fg_priority) {
+                pixel = fg_pixel;
+                palette = fg_palette;
+            } else {
+                pixel = bg_pixel;
+                palette = bg_palette;
+            }
+        }
+
+        screen->set(cycle - 1, scanline, this->palettes.color_at(palette, pixel));
     }
 
     if (scanline == 241 && cycle == 1) {
@@ -201,7 +238,7 @@ void P2C02::scroll() {
     }
 }
 
-void P2C02::render_background() {
+void P2C02::render_background(uint8_t *out_pixel, uint8_t *out_palette) {
     if (-1 <= scanline && scanline < 240) {  // visible scan-lines and pre-render scanline
 
         // The shifters are reloaded during ticks 9, 17, 25, ..., 257.
@@ -247,21 +284,112 @@ void P2C02::render_background() {
     if (0 <= scanline && scanline < 240 &&
         1 <= cycle && cycle <= 256) {
 
-        uint8_t bg_pixel = 0;
-        uint8_t bg_palette = 0;
-
         if (mask.render_background) {
             uint16_t bitmask = 0x8000 >> fine_x;
 
             uint8_t bit0 = (sl_chr_lsb & bitmask) ? 0x01 : 0x00;
             uint8_t bit1 = (sl_chr_msb & bitmask) ? 0x01 : 0x00;
-            bg_pixel = (bit1 << 1) | bit0;
+            *out_pixel = (bit1 << 1) | bit0;
 
             uint8_t pal_bit0 = (sl_chr_attr_lsb & bitmask) ? 0x01 : 0x00;
             uint8_t pal_bit1 = (sl_chr_attr_msb & bitmask) ? 0x01 : 0x00;
-            bg_palette = (pal_bit1 << 1) | pal_bit0;
+            *out_palette = (pal_bit1 << 1) | pal_bit0;
+        }
+    }
+}
+
+void P2C02::render_sprites(uint8_t *out_pixel, uint8_t *out_palette, uint8_t *out_priority) {
+    // Calculate sprites for next scanline
+    if (-1 <= scanline && scanline < 239) {
+
+        if (cycle == 257) {
+            // reset
+            std::memset(visible_sprites, 0xFF, 8 * sizeof(oam_t));
+            visible_sprites_count = 0;
+
+            // search visible sprites for next scanline
+            int next_scanline = scanline + 1;
+
+            for (auto &sprite: sprites) {
+                int diff = next_scanline - (int) sprite.y;
+                if (0 <= diff && diff < get_sprite_size()) {
+                    if (visible_sprites_count < 8) {
+                        visible_sprites[visible_sprites_count] = sprite;
+                        visible_sprites_count++;
+                    } else {
+                        status.sprite_overflow = 1;
+                        break;
+                    }
+                }
+            }
+        } else if (cycle == 340) {
+            // load shift registers
+            for (int i = 0; i < visible_sprites_count; i++) {
+                oam_t &sprite = visible_sprites[i];
+
+                uint8_t pattern_lsb, pattern_msb;
+                uint16_t pattern_addr;
+                if (control.sprite_size == 0) {  // 8x8
+                    if (sprite.attr.flip_v) {
+                        pattern_addr = (control.pattern_sprite << 12)
+                                       | (sprite.id << 4)
+                                       | (7 - (scanline + 1 - sprite.y));
+                    } else {
+                        pattern_addr = (control.pattern_sprite << 12)
+                                       | (sprite.id << 4)
+                                       | (scanline + 1 - sprite.y);
+                    }
+                } else {  // 16x8
+                    //TODO
+                    exit(1);
+                }
+
+                pattern_lsb = bus.read(pattern_addr);
+                pattern_msb = bus.read(pattern_addr + 8);
+
+                if (sprite.attr.flip_h) {
+                    pattern_lsb = flip_horizontal(pattern_lsb);
+                    pattern_msb = flip_horizontal(pattern_msb);
+                }
+
+                sr_vsprite_lsb[i] = pattern_lsb;
+                sr_vsprite_msb[i] = pattern_msb;
+            }
+        }
+    }
+
+    // render sprite
+    if (0 <= scanline && scanline <= 239 &&
+        1 <= cycle && cycle <= 256) {
+
+        // update shift registers
+        if (cycle > 1) {
+            for (int i = 0; i < visible_sprites_count; i++) {
+                oam_t &sprite = visible_sprites[i];
+                if (sprite.x > 0) {
+                    sprite.x--;
+                } else {
+                    sr_vsprite_lsb[i] <<= 1;
+                    sr_vsprite_msb[i] <<= 1;
+                }
+            }
         }
 
-        screen->set(cycle - 1, scanline, this->palettes.color_at(bg_palette, bg_pixel));
+        if (mask.render_sprites) {
+            for (int i = 0; i < visible_sprites_count; i++) {
+                oam_t &sprite = visible_sprites[i];
+
+                if (sprite.x == 0) {
+                    uint8_t bit0 = (sr_vsprite_lsb[i] & 0x80) ? 0x01 : 0x00;
+                    uint8_t bit1 = (sr_vsprite_msb[i] & 0x80) ? 0x01 : 0x00;
+                    *out_pixel = (bit1 << 1) | bit0;
+
+                    *out_palette = sprite.attr.palette + 0x04;
+                    *out_priority = ~sprite.attr.priority;
+
+                    if (*out_pixel != 0) break;
+                }
+            }
+        }
     }
 }
