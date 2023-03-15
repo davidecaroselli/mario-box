@@ -167,6 +167,9 @@ private:
     uint8_t sr_vsprite_lsb[8] = {};
     uint8_t sr_vsprite_msb[8] = {};
 
+    bool sprite_zero_visible = false;
+    bool sprite_zero_rendering = false;
+
     [[nodiscard]] inline uint8_t get_sprite_size() const {
         return control.sprite_size == 1 ? 16 : 8;
     }

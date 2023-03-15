@@ -117,6 +117,7 @@ void P2C02::clock() {
     if (scanline == -1 && cycle == 1) {
         status.vertical_blank = 0;
         status.sprite_overflow = 0;
+        status.sprite_zero_hit = 0;
     }
 
     scroll();
@@ -144,6 +145,18 @@ void P2C02::clock() {
             } else {
                 pixel = bg_pixel;
                 palette = bg_palette;
+            }
+
+            if (sprite_zero_visible && sprite_zero_rendering) {
+                if (mask.render_background && mask.render_sprites) {
+                    if (~(mask.render_background_left | mask.render_sprites_left)) {
+                        if (9 <= cycle && cycle <= 256)
+                            status.sprite_zero_hit = 1;
+                    } else {
+                        if (1 <= cycle && cycle <= 256)
+                            status.sprite_zero_hit = 1;
+                    }
+                }
             }
         }
 
@@ -306,14 +319,19 @@ void P2C02::render_sprites(uint8_t *out_pixel, uint8_t *out_palette, uint8_t *ou
             // reset
             std::memset(visible_sprites, 0xFF, 8 * sizeof(oam_t));
             visible_sprites_count = 0;
+            sprite_zero_visible = false;
 
             // search visible sprites for next scanline
             int next_scanline = scanline + 1;
 
-            for (auto &sprite: sprites) {
+            for (int i = 0; i < 64; i++) {
+                auto &sprite = sprites[i];
+
                 int diff = next_scanline - (int) sprite.y;
                 if (0 <= diff && diff < get_sprite_size()) {
                     if (visible_sprites_count < 8) {
+                        if (i == 0) sprite_zero_visible = true;
+
                         visible_sprites[visible_sprites_count] = sprite;
                         visible_sprites_count++;
                     } else {
@@ -376,6 +394,8 @@ void P2C02::render_sprites(uint8_t *out_pixel, uint8_t *out_palette, uint8_t *ou
         }
 
         if (mask.render_sprites) {
+            sprite_zero_rendering = false;
+
             for (int i = 0; i < visible_sprites_count; i++) {
                 oam_t &sprite = visible_sprites[i];
 
@@ -385,9 +405,12 @@ void P2C02::render_sprites(uint8_t *out_pixel, uint8_t *out_palette, uint8_t *ou
                     *out_pixel = (bit1 << 1) | bit0;
 
                     *out_palette = sprite.attr.palette + 0x04;
-                    *out_priority = ~sprite.attr.priority;
+                    *out_priority = sprite.attr.priority ? 0 : 1;
 
-                    if (*out_pixel != 0) break;
+                    if (*out_pixel != 0) {
+                        if (i == 0) sprite_zero_rendering = true;
+                        break;
+                    }
                 }
             }
         }
