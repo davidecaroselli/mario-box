@@ -30,12 +30,11 @@ uint8_t Palettes::bus_read(uint8_t bus_id, uint16_t addr) {
 }
 
 void Palettes::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
-    addr &= 0x001F;
     if (addr == 0x3F10) addr = 0x3F00;
     else if (addr == 0x3F14) addr = 0x3F04;
     else if (addr == 0x3F18) addr = 0x3F08;
     else if (addr == 0x3F1C) addr = 0x3F0C;
-
+    addr &= 0x001F;
     data[addr] = val;
 }
 
