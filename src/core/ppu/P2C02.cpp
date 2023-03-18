@@ -322,12 +322,10 @@ void P2C02::render_sprites(uint8_t *out_pixel, uint8_t *out_palette, uint8_t *ou
             sprite_zero_visible = false;
 
             // search visible sprites for next scanline
-            int next_scanline = scanline + 1;
-
             for (int i = 0; i < 64; i++) {
                 auto &sprite = sprites[i];
 
-                int diff = next_scanline - (int) sprite.y;
+                int diff = scanline - (int) sprite.y;
                 if (0 <= diff && diff < get_sprite_size()) {
                     if (visible_sprites_count < 8) {
                         if (i == 0) sprite_zero_visible = true;
@@ -351,11 +349,11 @@ void P2C02::render_sprites(uint8_t *out_pixel, uint8_t *out_palette, uint8_t *ou
                     if (sprite.attr.flip_v) {
                         pattern_addr = (control.pattern_sprite << 12)
                                        | (sprite.id << 4)
-                                       | (7 - (scanline + 1 - sprite.y));
+                                       | (7 - (scanline - sprite.y));
                     } else {
                         pattern_addr = (control.pattern_sprite << 12)
                                        | (sprite.id << 4)
-                                       | (scanline + 1 - sprite.y);
+                                       | (scanline - sprite.y);
                     }
                 } else {  // 16x8
                     //TODO
