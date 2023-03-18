@@ -255,7 +255,7 @@ void P2C02::render_background(uint8_t *out_pixel, uint8_t *out_palette) {
     if (-1 <= scanline && scanline < 240) {  // visible scan-lines and pre-render scanline
 
         // The shifters are reloaded during ticks 9, 17, 25, ..., 257.
-        if (cycle > 1 && cycle % 8 == 1) {
+        if (cycle > 1 && (cycle - 1) % 8 == 1) {
             // load background shift registers
             sl_chr_lsb = (sl_chr_lsb & 0xFF00) | lr_chr_lsb;
             sl_chr_msb = (sl_chr_msb & 0xFF00) | lr_chr_msb;
@@ -274,17 +274,17 @@ void P2C02::render_background(uint8_t *out_pixel, uint8_t *out_palette) {
                 sl_chr_attr_msb <<= 1;
             }
 
-            switch (cycle % 8) {
-                case 2:
+            switch ((cycle - 1) % 8) {
+                case 0:
                     lr_tile = read_tile();
                     break;
-                case 4:
+                case 2:
                     lr_tile_attr = read_tile_attr();
                     break;
-                case 6:
+                case 4:
                     lr_chr_lsb = read_pattern(true);
                     break;
-                case 0:
+                case 6:
                     lr_chr_msb = read_pattern(false);
                     break;
             }
