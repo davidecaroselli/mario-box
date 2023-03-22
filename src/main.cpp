@@ -101,6 +101,7 @@
 #include "core/NES.h"
 #include "debug/ASM.h"
 #include "platform/olc/olcCanvas.h"
+#include "platform/audiounit/AudioUnitLib.h"
 
 class Example : public olc::PixelGameEngine {
 public:
@@ -117,9 +118,9 @@ public:
 public:
     bool OnUserCreate() override {
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/nestest.nes");
-        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/iceclimber.nes");
-//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
+        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/lolo3.nes");
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
@@ -278,6 +279,24 @@ public:
 
 
 int main() {
+    A2A03 apu;
+
+    AudioUnitLib audio;
+    audio.connect(&apu);
+
+    for (int j = 0; j < 2; j++) {
+        apu.demo_sw1_tone = 220 * ((double) (j + 1) / 2.);
+        apu.demo_sw2_tone = 1.2 * apu.demo_sw1_tone;
+
+        for (int i = 0; i < 16; i++) {
+            apu.demo_sw1_tone = round(1.2 * apu.demo_sw1_tone);
+            apu.demo_sw2_tone = 1.2 * apu.demo_sw1_tone;
+            usleep(30000);
+        }
+    }
+
+    audio.close();
+
     Example demo;
     int scale = 1;
     if (demo.Construct(800, 510, scale, scale))
@@ -285,3 +304,10 @@ int main() {
 
     return 0;
 }
+
+
+
+
+
+
+
