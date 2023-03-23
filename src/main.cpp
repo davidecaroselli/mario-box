@@ -105,6 +105,7 @@
 
 class Example : public olc::PixelGameEngine {
 public:
+    AudioUnitLib audio;
     olcCanvas screen;
 
     NES *nes;
@@ -112,6 +113,8 @@ public:
 
     Example() : screen(256, 240) {
         nes = new NES(&screen);
+        audio.connect(&nes->apu);
+
         sAppName = "Example";
     }
 
@@ -125,9 +128,27 @@ public:
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
 
+        for (int j = 0; j < 2; j++) {
+            nes->apu.demo_sw1_tone = 220 * ((double) (j + 1) / 2.);
+            nes->apu.demo_sw2_tone = 1.2 * nes->apu.demo_sw1_tone;
+
+            for (int i = 0; i < 16; i++) {
+                nes->apu.demo_sw1_tone = round(1.2 * nes->apu.demo_sw1_tone);
+                nes->apu.demo_sw2_tone = 1.2 * nes->apu.demo_sw1_tone;
+                usleep(30000);
+            }
+        }
+
+        nes->apu.demo_sw1_tone = 0;
+        nes->apu.demo_sw2_tone = 0;
+
         DrawUI();
 
         return true;
+    }
+
+    bool OnUserDestroy() override {
+        audio.close();
     }
 
     void DrawCode(int x, int y) {
@@ -279,24 +300,6 @@ public:
 
 
 int main() {
-//    A2A03 apu;
-//
-//    AudioUnitLib audio;
-//    audio.connect(&apu);
-//
-//    for (int j = 0; j < 2; j++) {
-//        apu.demo_sw1_tone = 220 * ((double) (j + 1) / 2.);
-//        apu.demo_sw2_tone = 1.2 * apu.demo_sw1_tone;
-//
-//        for (int i = 0; i < 16; i++) {
-//            apu.demo_sw1_tone = round(1.2 * apu.demo_sw1_tone);
-//            apu.demo_sw2_tone = 1.2 * apu.demo_sw1_tone;
-//            usleep(30000);
-//        }
-//    }
-//
-//    audio.close();
-
     Example demo;
     int scale = 1;
     if (demo.Construct(800, 510, scale, scale))

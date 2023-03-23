@@ -9,7 +9,10 @@
 
 class A2A03 : public SBDevice {
 public:
-    double sample(double t);
+    double demo_sw1_tone = 0;
+    double demo_sw2_tone = 0;
+
+    [[nodiscard]] double sample(double t) const;
 
     uint8_t bus_read(uint8_t bus_id, uint16_t addr) override;
 
