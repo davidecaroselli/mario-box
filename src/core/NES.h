@@ -13,10 +13,12 @@
 #include "Cartridge.h"
 #include "Controllers.h"
 #include "DMA.h"
+#include "A2A03.h"
 
 class NES {
 public:
     C6502 cpu;
+    A2A03 apu;
     P2C02 ppu;
     DMA dma;
     Controllers controllers;
@@ -38,8 +40,8 @@ public:
     void insert(Cartridge *crt) {
         if (this->cartridge) eject();
 
-        this->cpu.bus.connect(&crt->prg);
-        this->ppu.bus.connect(&crt->chr);
+        this->cpu.bus.connect(0x4020, 0xFFFF, &crt->prg);
+        this->ppu.bus.connect(0x0000, 0x1FFF, &crt->chr);
         this->ppu.name_tables.mirroring = crt->mirroring;
         this->cartridge = std::shared_ptr<Cartridge>(crt);
 

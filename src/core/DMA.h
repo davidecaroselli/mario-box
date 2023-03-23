@@ -18,14 +18,6 @@ public:
         return active;
     }
 
-    uint16_t bus_begin(uint8_t bus_id) override {
-        return 0x4014;
-    }
-
-    uint16_t bus_end(uint8_t bus_id) override {
-        return 0x4014;
-    }
-
     uint8_t bus_read(uint8_t bus_id, uint16_t addr) override {
         return 0x00;
     }

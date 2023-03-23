@@ -25,7 +25,7 @@ struct header_t {
 Cartridge::Cartridge(const Mirroring mirroring, Mapper *mapper, const std::vector<uint8_t> &prg,
                      const std::vector<uint8_t> &chr)
         : mirroring(mirroring), mapper(mapper),
-          prg(prg, this->mapper, 0x4020, 0xFFFF),
+          prg(prg, this->mapper),
           chr(chr, this->mapper) {}
 
 Cartridge *Cartridge::load(const string &path) {

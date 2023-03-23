@@ -13,10 +13,6 @@ class SystemBus;
 
 class SBDevice {
 public:
-    virtual uint16_t bus_begin(uint8_t bus_id) = 0;
-
-    virtual uint16_t bus_end(uint8_t bus_id) = 0;
-
     virtual uint8_t bus_read(uint8_t bus_id, uint16_t addr) = 0;
 
     virtual void bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) = 0;
@@ -31,7 +27,7 @@ public:
 
     explicit SystemBus(uint8_t id) : id(id) {}
 
-    void connect(SBDevice *device);
+    void connect(uint16_t begin, uint16_t end, SBDevice *device);
 
     void disconnect(SBDevice *device);
 
@@ -40,7 +36,16 @@ public:
     void write(uint16_t addr, uint8_t val);
 
 private:
-    std::vector<SBDevice *> devices;
+    struct sb_device_t {
+        uint16_t begin;
+        uint16_t end;
+        SBDevice *device;
+
+        sb_device_t(uint16_t begin, uint16_t end, SBDevice *device)
+                : begin(begin), end(end), device(device) {};
+    };
+
+    std::vector<sb_device_t> devices;
 };
 
 #endif //MARIOBOX_SYSTEMBUS_H

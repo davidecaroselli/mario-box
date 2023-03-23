@@ -15,10 +15,6 @@ struct Palette {
 
 class Palettes : public SBDevice {
 public:
-    uint16_t bus_begin(uint8_t bus_id) override;
-
-    uint16_t bus_end(uint8_t bus_id) override;
-
     uint8_t bus_read(uint8_t bus_id, uint16_t addr) override;
 
     void bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) override;

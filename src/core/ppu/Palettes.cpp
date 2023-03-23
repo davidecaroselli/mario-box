@@ -11,14 +11,6 @@ const std::vector<NESColor> PAL = {
          {236, 238, 236}, {168, 204, 236}, {188, 188, 236}, {212, 178, 236}, {236, 174, 236}, {236, 174, 212}, {236, 180, 176}, {228, 196, 144}, {204, 210, 120}, {180, 222, 120}, {168, 226, 144}, {152, 226, 180}, {160, 214, 228}, {160, 162, 160}, {0  , 0  , 0  }, {0  , 0  , 0  }
 };
 
-uint16_t Palettes::bus_begin(uint8_t bus_id) {
-    return 0x3F00;
-}
-
-uint16_t Palettes::bus_end(uint8_t bus_id) {
-    return 0x3FFF;
-}
-
 uint8_t Palettes::bus_read(uint8_t bus_id, uint16_t addr) {
     addr &= 0x001F;
     if (addr == 0x3F10) addr = 0x3F00;

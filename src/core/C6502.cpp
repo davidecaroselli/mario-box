@@ -6,8 +6,8 @@
 
 using namespace std;
 
-C6502::C6502() : bus(SystemBus::MAIN_BUS_ID), ram(2048, 0x0000, 0x1FFF) {
-    bus.connect(&ram);
+C6502::C6502() : bus(SystemBus::MAIN_BUS_ID), ram(2048) {
+    bus.connect(0x0000, 0x1FFF, &ram);
 }
 
 void C6502::clock() {

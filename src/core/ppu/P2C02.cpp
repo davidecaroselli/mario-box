@@ -17,8 +17,8 @@ P2C02::P2C02(Canvas *screen) : bus(SystemBus::PPU_BUS_ID), screen(screen) {
     assert(screen->width == 256);
     assert(screen->height == 240);
 
-    bus.connect(&name_tables);
-    bus.connect(&palettes);
+    bus.connect(0x2000, 0x2FFF, &name_tables);
+    bus.connect(0x3F00, 0x3FFF, &palettes);
 }
 
 uint8_t P2C02::bus_read(uint8_t bus_id, uint16_t addr) {

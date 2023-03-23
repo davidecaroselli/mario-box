@@ -7,13 +7,13 @@
 
 using namespace std;
 
-void SystemBus::connect(SBDevice *device) {
-    devices.push_back(device);
+void SystemBus::connect(uint16_t begin, uint16_t end, SBDevice *device) {
+    devices.emplace_back(begin, end, device);
 }
 
 void SystemBus::disconnect(SBDevice *device) {
     for (auto it = devices.begin(); it != devices.end(); ++it) {
-        if ((*it) == device) {
+        if (it->device == device) {
             devices.erase(it);
             break;
         }
@@ -22,8 +22,8 @@ void SystemBus::disconnect(SBDevice *device) {
 
 uint8_t SystemBus::read(uint16_t addr) {
     for (auto &device : devices) {
-        if (device->bus_begin(id) <= addr && addr <= device->bus_end(id)) {
-            return device->bus_read(id, addr);
+        if (device.begin <= addr && addr <= device.end) {
+            return device.device->bus_read(id, addr);
         }
     }
 
@@ -33,8 +33,8 @@ uint8_t SystemBus::read(uint16_t addr) {
 
 void SystemBus::write(uint16_t addr, uint8_t val) {
     for (auto &device : devices) {
-        if (device->bus_begin(id) <= addr && addr <= device->bus_end(id)) {
-            device->bus_write(id, addr, val);
+        if (device.begin <= addr && addr <= device.end) {
+            device.device->bus_write(id, addr, val);
             return;
         }
     }

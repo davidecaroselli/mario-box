@@ -10,20 +10,12 @@
 
 class Memory: public SBDevice {
 public:
-    Memory(uint32_t size, uint16_t begin, uint16_t end);
+    explicit Memory(uint32_t size, uint16_t addr = 0x0000);
 
-    Memory(std::vector<uint8_t> memory, std::shared_ptr<Mapper> mapper, uint16_t begin, uint16_t end);
+    Memory(std::vector<uint8_t> memory, std::shared_ptr<Mapper> mapper);
 
     const std::vector<uint8_t> &data() {
         return data_;
-    }
-
-    uint16_t bus_begin(uint8_t bus_id) override {
-        return begin;
-    }
-
-    uint16_t bus_end(uint8_t bus_id) override {
-        return end;
     }
 
     uint8_t bus_read(uint8_t bus_id, uint16_t addr) override;
@@ -32,7 +24,6 @@ public:
 
 protected:
     const uint16_t begin;
-    const uint16_t end;
     const uint16_t mask;
     std::shared_ptr<Mapper> mapper;
     std::vector<uint8_t> data_;

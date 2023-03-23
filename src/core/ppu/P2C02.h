@@ -94,14 +94,6 @@ public:
         return frame_complete;
     }
 
-    uint16_t bus_begin(uint8_t) override {
-        return 0x2000;
-    }
-
-    uint16_t bus_end(uint8_t) override {
-        return 0x2007;
-    }
-
     uint8_t bus_read(uint8_t bus_id, uint16_t addr) override;
 
     void bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) override;

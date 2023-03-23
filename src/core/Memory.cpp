@@ -6,7 +6,7 @@
 
 #include <utility>
 
-Memory::Memory(uint32_t size, uint16_t begin, uint16_t end) : begin(begin), end(end), mask(size - 1), data_(size) {
+Memory::Memory(uint32_t size, uint16_t begin) : begin(begin), mask(size - 1), data_(size) {
 }
 
 uint8_t Memory::bus_read(uint8_t bus_id, uint16_t addr) {
@@ -22,6 +22,6 @@ void Memory::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
     }
 }
 
-Memory::Memory(std::vector<uint8_t> memory, std::shared_ptr<Mapper> mapper, uint16_t begin, uint16_t end)
-        : begin(begin), end(end), mask(0), mapper(std::move(mapper)), data_(std::move(memory)) {
+Memory::Memory(std::vector<uint8_t> memory, std::shared_ptr<Mapper> mapper)
+        : begin(0), mask(0), mapper(std::move(mapper)), data_(std::move(memory)) {
 }

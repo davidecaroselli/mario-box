@@ -11,7 +11,7 @@
 
 class ASM {
 public:
-    static ASM *decompile(Memory *prg, int begin = -1, int end = -1);
+    static ASM *decompile(Memory *prg, uint32_t begin = 0x0000, uint32_t end = 0x1FFF);
 
     std::vector<std::string> snippet(uint16_t center, int len = 8);
 

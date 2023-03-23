@@ -279,23 +279,23 @@ public:
 
 
 int main() {
-    A2A03 apu;
-
-    AudioUnitLib audio;
-    audio.connect(&apu);
-
-    for (int j = 0; j < 2; j++) {
-        apu.demo_sw1_tone = 220 * ((double) (j + 1) / 2.);
-        apu.demo_sw2_tone = 1.2 * apu.demo_sw1_tone;
-
-        for (int i = 0; i < 16; i++) {
-            apu.demo_sw1_tone = round(1.2 * apu.demo_sw1_tone);
-            apu.demo_sw2_tone = 1.2 * apu.demo_sw1_tone;
-            usleep(30000);
-        }
-    }
-
-    audio.close();
+//    A2A03 apu;
+//
+//    AudioUnitLib audio;
+//    audio.connect(&apu);
+//
+//    for (int j = 0; j < 2; j++) {
+//        apu.demo_sw1_tone = 220 * ((double) (j + 1) / 2.);
+//        apu.demo_sw2_tone = 1.2 * apu.demo_sw1_tone;
+//
+//        for (int i = 0; i < 16; i++) {
+//            apu.demo_sw1_tone = round(1.2 * apu.demo_sw1_tone);
+//            apu.demo_sw2_tone = 1.2 * apu.demo_sw1_tone;
+//            usleep(30000);
+//        }
+//    }
+//
+//    audio.close();
 
     Example demo;
     int scale = 1;

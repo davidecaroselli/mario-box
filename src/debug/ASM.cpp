@@ -47,10 +47,7 @@ string addrmode_str(const string &addrmode, uint16_t addr, uint8_t bytes) {
     return pad_out.str();
 }
 
-ASM *ASM::decompile(Memory *prg, int begin, int end) {
-    if (begin < 0) begin = prg->bus_begin(SystemBus::MAIN_BUS_ID);
-    if (end < 0) end = prg->bus_end(SystemBus::MAIN_BUS_ID);
-
+ASM *ASM::decompile(Memory *prg, uint32_t begin, uint32_t end) {
     map<uint16_t, string> lines;
     uint32_t addr = begin;
     while (addr <= end) {
