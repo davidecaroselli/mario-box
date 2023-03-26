@@ -9,7 +9,7 @@
 
 class A2A03 : public SBDevice {
 public:
-    [[nodiscard]] double sample(double t) const;
+    [[nodiscard]] double sample(double t);
 
     void clock();
 
@@ -62,7 +62,7 @@ private:
         uint8_t timer = 0;
         uint8_t period = 0;
 
-        explicit sweep_t(uint8_t channel): channel(channel & 0x01) {}
+        explicit sweep_t(uint8_t channel) : channel(channel & 0x01) {}
 
         uint16_t clock(uint16_t target);
 
@@ -76,7 +76,7 @@ private:
 
         [[nodiscard]] virtual bool is_enabled() const = 0;
 
-        [[nodiscard]] virtual double sample(double t) const = 0;
+        [[nodiscard]] virtual double sample(double t) = 0;
     };
 
     struct pulse_t : public channel_t {
@@ -95,7 +95,7 @@ private:
 
         [[nodiscard]] bool is_enabled() const override;
 
-        [[nodiscard]] double sample(double t) const override;
+        [[nodiscard]] double sample(double t) override;
 
     };
 
@@ -111,12 +111,31 @@ private:
 
         [[nodiscard]] bool is_enabled() const override;
 
-        [[nodiscard]] double sample(double t) const override;
+        [[nodiscard]] double sample(double t) override;
+    };
+
+    struct noise_t : public channel_t {
+        bool enabled = false;
+        bool loop = false;
+        uint16_t period = 0;
+
+        envelope_t envelope;
+        length_counter_t length_counter;
+
+        uint16_t timer = 0;
+        uint16_t sequence = 1;
+
+        void clock(bool quarter_frame, bool half_frame) override;
+
+        [[nodiscard]] bool is_enabled() const override;
+
+        [[nodiscard]] double sample(double t) override;
     };
 
     pulse_t pulse1 = pulse_t(0);
     pulse_t pulse2 = pulse_t(1);
     triangle_t triangle;
+    noise_t noise;
 
 };
 

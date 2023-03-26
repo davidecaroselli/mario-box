@@ -11,7 +11,11 @@ static uint8_t LENGTH_COUNTERS[32] = {
         12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
 
-double A2A03::sample(double t) const {
+static uint16_t NOISE_PERIODS[16] = {
+        4, 8, 14, 30, 60, 88, 118, 148, 188, 236, 354, 472, 708,  944, 1890, 3778
+};
+
+double A2A03::sample(double t) {
     double mix = 0;
     double norm = 0;
 
@@ -25,6 +29,10 @@ double A2A03::sample(double t) const {
     }
     if (triangle.is_enabled()) {
         mix += triangle.sample(t) * 0.7;
+        norm += 1.;
+    }
+    if (noise.is_enabled()) {
+        mix += noise.sample(t) * 0.5;
         norm += 1.;
     }
 
@@ -42,19 +50,19 @@ void A2A03::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
         case 0x4000:
         case 0x4004:
             pulse = addr < 0x4004 ? &pulse1 : &pulse2;
-            pulse->dutycycle =   DUTYCYCLES[(val & 0b11000000) >> 6];
-            pulse->envelope.loop =          (val & 0b00100000) > 0;
-            pulse->envelope.enabled =       (val & 0b00010000) == 0;
-            pulse->envelope.volume =        (val & 0b00001111);
+            pulse->dutycycle = DUTYCYCLES[(val & 0b11000000) >> 6];
+            pulse->envelope.loop = (val & 0b00100000) > 0;
+            pulse->envelope.enabled = (val & 0b00010000) == 0;
+            pulse->envelope.volume = (val & 0b00001111);
             pulse->length_counter.enabled = !pulse->envelope.enabled;
             break;
         case 0x4001:
         case 0x4005:
             pulse = addr < 0x4004 ? &pulse1 : &pulse2;
             pulse->sweep.enabled = (val & 0b10000000) > 0;
-            pulse->sweep.period =  (val & 0b01110000) >> 4;
-            pulse->sweep.down =    (val & 0b00001000) > 0;
-            pulse->sweep.shift =    val & 0b00000111;
+            pulse->sweep.period = (val & 0b01110000) >> 4;
+            pulse->sweep.down = (val & 0b00001000) > 0;
+            pulse->sweep.shift = val & 0b00000111;
             pulse->sweep.reload = true;
             break;
         case 0x4002:
@@ -86,10 +94,29 @@ void A2A03::bus_write(uint8_t bus_id, uint16_t addr, uint8_t val) {
             triangle.linear_counter.reload = true;
             break;
 
+        case 0x400C:
+            noise.envelope.loop = (val & 0b00100000) > 0;
+            noise.envelope.enabled = (val & 0b00010000) == 0;
+            noise.envelope.volume = (val & 0b00001111);
+            noise.length_counter.enabled = !noise.envelope.enabled;
+            break;
+        case 0x400D:
+            // unused
+            break;
+        case 0x400E:
+            noise.loop = (val & 0b10000000) > 0;
+            noise.period = NOISE_PERIODS[(val & 0b00001111)];
+            break;
+        case 0x400F:
+            noise.length_counter.counter = LENGTH_COUNTERS[val >> 3];
+            noise.envelope.start = true;
+            break;
+
         case 0x4015:
             pulse1.enabled = (val & 0x01) > 0;
             pulse2.enabled = (val & 0x02) > 0;
             triangle.enabled = (val & 0x04) > 0;
+            noise.enabled = (val & 0x08) > 0;
             break;
 
     }
@@ -111,6 +138,7 @@ void A2A03::clock() {
     pulse1.clock(quarter_frame, half_frame);
     pulse2.clock(quarter_frame, half_frame);
     triangle.clock(quarter_frame, half_frame);
+    noise.clock(quarter_frame, half_frame);
 }
 
 // - Channel components ------------------------------------------------------------------------------------------------
@@ -159,7 +187,7 @@ bool A2A03::sweep_t::mute(uint16_t target) const {
     return enabled && (target < 8 || target > 0x7FF);
 }
 
-uint16_t A2A03::sweep_t::clock(uint16_t target)  {
+uint16_t A2A03::sweep_t::clock(uint16_t target) {
     if (!enabled) return target;
 
     uint16_t change = target >> shift;
@@ -198,10 +226,10 @@ void A2A03::pulse_t::clock(bool quarter_frame, bool half_frame) {
     if (half_frame) timer = sweep.clock(timer);
 }
 
-double A2A03::pulse_t::sample(double t) const {
+double A2A03::pulse_t::sample(double t) {
     if (length_counter.counter > 0 && envelope.value > 0 && !sweep.mute(timer)) {
         double f = 1662607. / (16. * (double) (timer + 1));
-        return square_wave(t, f, dutycycle) * ((double) envelope.value / 15.);
+        return square_wave(t, f, dutycycle) * ((double) (envelope.value - 1) / 16.);
     } else {
         return 0.;
     }
@@ -210,7 +238,7 @@ double A2A03::pulse_t::sample(double t) const {
 // - Triangle -
 
 bool A2A03::triangle_t::is_enabled() const {
-    return enabled && timer >= 2;
+    return enabled && timer >= 8;
 }
 
 void A2A03::triangle_t::clock(bool quarter_frame, bool half_frame) {
@@ -218,11 +246,45 @@ void A2A03::triangle_t::clock(bool quarter_frame, bool half_frame) {
     if (quarter_frame) linear_counter.clock();
 }
 
-double A2A03::triangle_t::sample(double t) const {
+double A2A03::triangle_t::sample(double t) {
     if (length_counter.counter > 0 && linear_counter.counter > 0) {
         double f = 1662607. / (32. * (double) (timer + 1));
         return triangle_wave(t, f);
     } else {
         return 0;
+    }
+}
+
+// - Noise -
+
+bool A2A03::noise_t::is_enabled() const {
+    return enabled;
+}
+
+void A2A03::noise_t::clock(bool quarter_frame, bool half_frame) {
+    if (quarter_frame) envelope.clock();
+    if (half_frame) length_counter.clock();
+}
+
+double A2A03::noise_t::sample(double t) {
+    if (length_counter.counter > 0 && envelope.value > 0) {
+        const uint16_t step = 24;  // adjust sample speed
+
+        for (int i = 0; i < step; ++i) {
+            timer--;
+            if (timer == 0xFFFF) {
+                timer = period;
+
+                uint8_t bit0 = sequence & 0x01;
+                uint8_t bit1 = (sequence >> (loop ? 6 : 1)) & 0x01;
+                sequence >>= 1;
+                sequence |= (bit0 ^ bit1) << 14;
+            }
+        }
+
+        double sample = 2. * ((double) (sequence & 0x01)) - 1.;
+        return sample * ((double) (envelope.value - 1) / 16.);
+    } else {
+        return 0.;
     }
 }
