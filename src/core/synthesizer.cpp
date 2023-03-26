@@ -2,6 +2,7 @@
 // Created by Davide Caroselli on 22/03/23.
 //
 
+#include <cmath>
 #include "synthesizer.h"
 
 
@@ -48,17 +49,35 @@ double approx_sin(double x) {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-double square_wave(double t, double tone, double dutycycle, double amplitude, int harmonics) {
+#define SQUARE_WAVE_NORM 0.63661977236  // (2 / PI)
+
+double square_wave(double t, double freq, double dutycycle, unsigned int harmonics) {
     double a = 0;
     double b = 0;
     double p = dutycycle * DOUBLE_PI;
+    double tpf = DOUBLE_PI * freq;
 
-    for (int n_ = 0; n_ < harmonics; ++n_) {
+    for (unsigned int n_ = 0; n_ < harmonics; ++n_) {
         double n = (double) n_ + 1;
-        double c = n * t * tone;
+        double c = n * t * tpf;
         a += -approx_sin(c) / n;
         b += -approx_sin(c - p * n) / n;
     }
 
-    return (2.0 * amplitude / PI) * (a - b);
+    return SQUARE_WAVE_NORM * (a - b);
+}
+
+#define TRIANGLE_WAVE_NORM 0.81056946913  // (8 / PI^2)
+
+double triangle_wave(double t, double freq, unsigned int harmonics) {
+    double out = 0;
+    double tpf = DOUBLE_PI * freq;
+
+    for (unsigned int i = 0; i < harmonics; ++i) {
+        double n = 2 * i + 1;
+        double sign = i % 2 == 0 ? +1 : -1;
+        out += sign * approx_sin(tpf * n * t) / (n * n);
+    }
+
+    return TRIANGLE_WAVE_NORM * out;
 }

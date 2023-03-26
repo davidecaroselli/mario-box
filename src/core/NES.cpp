@@ -36,6 +36,10 @@ void NES::clock() {
             cpu.clock();
         }
     }
+
+    if (ticks % 6 == 0)
+        apu.clock();
+
     ppu.clock();
 
     if (ppu.nmi()) {

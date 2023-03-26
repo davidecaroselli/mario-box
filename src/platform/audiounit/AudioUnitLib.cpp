@@ -28,9 +28,9 @@ OSStatus RenderWave(void *_context, AudioUnitRenderActionFlags *, const AudioTim
         double sample = render_context->sampler(render_context->theta, render_context->sampler_context);
         mono[frame] = (SInt16) (sample * 32767.0f);
 
-        render_context->theta += M_TAU / render_context->sample_rate;
-        if (render_context->theta > M_TAU) {
-            render_context->theta -= M_TAU;
+        render_context->theta += 1. / render_context->sample_rate;
+        if (render_context->theta > 1.) {
+            render_context->theta -= 1.;
         }
     }
 

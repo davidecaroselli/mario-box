@@ -124,23 +124,9 @@ public:
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/donkeykong.nes");
 //        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/iceclimber.nes");
         Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/supermariobros.nes");
-//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/lolo3.nes");
+//        Cartridge *cartridge = Cartridge::load("/Users/davide/Desktop/excitebike.nes");
         nes->insert(cartridge);
         code = ASM::decompile(&cartridge->prg);
-
-        for (int j = 0; j < 2; j++) {
-            nes->apu.demo_sw1_tone = 220 * ((double) (j + 1) / 2.);
-            nes->apu.demo_sw2_tone = 1.2 * nes->apu.demo_sw1_tone;
-
-            for (int i = 0; i < 16; i++) {
-                nes->apu.demo_sw1_tone = round(1.2 * nes->apu.demo_sw1_tone);
-                nes->apu.demo_sw2_tone = 1.2 * nes->apu.demo_sw1_tone;
-                usleep(30000);
-            }
-        }
-
-        nes->apu.demo_sw1_tone = 0;
-        nes->apu.demo_sw2_tone = 0;
 
         DrawUI();
 
@@ -266,7 +252,7 @@ public:
                 fResidualTime -= fElapsedTime;
                 draw_ui = false;
             } else {
-                fResidualTime += (1.0f / 60.0f) - fElapsedTime;
+                fResidualTime += (1.0f / 50.0f) - fElapsedTime;
                 nes->frame();
             }
         } else {
