@@ -43,7 +43,7 @@ Cartridge *Cartridge::load(const string &path) {
 
     bool has_trainer = (header.mapper_flags_6 & 0x04) != 0;
     Mirroring mirroring = (header.mapper_flags_6 & 0x01) != 0 ? Vertical : Horizontal;
-    uint8_t mapper_id = (header.mapper_flags_7 & 0xF0) | (header.mapper_flags_7 >> 4);
+    uint8_t mapper_id = (header.mapper_flags_7 & 0xF0) | (header.mapper_flags_6 >> 4);
 
     Mapper *mapper = Mapper::create(mapper_id, header.prg_rom_size, header.chr_rom_size);
 
