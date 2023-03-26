@@ -20,6 +20,8 @@ public:
 private:
     uint32_t frame_ticks = 0;
 
+    // - Channel components -----------------------------------------------
+
     struct envelope_t {
         bool start = false;
         bool loop = false;
@@ -34,117 +36,82 @@ private:
         void clock();
     };
 
-    struct length_t {
+    struct length_counter_t {
         bool enabled = false;
         uint8_t counter = 0;
-
-        uint8_t value = 0;
 
         void clock();
     };
 
-    struct sweeper_t
-    {
+    struct linear_counter_t {
+        bool enabled = true;
+        bool reload = false;
+        uint8_t reload_value = 0;
+        uint8_t counter = 0;
+
+        void clock();
+    };
+
+    struct sweep_t {
+        const uint8_t channel;
+
         bool enabled = false;
         bool down = false;
         bool reload = false;
-        uint8_t shift = 0x00;
-        uint8_t timer = 0x00;
-        uint8_t period = 0x00;
-        uint16_t change = 0;
-        bool mute = false;
+        uint8_t shift = 0;
+        uint8_t timer = 0;
+        uint8_t period = 0;
 
-        void track(uint16_t &target)
-        {
-            if (enabled)
-            {
-                change = target >> shift;
-                mute = (target < 8) || (target > 0x7FF);
-            }
-        }
+        explicit sweep_t(uint8_t channel): channel(channel & 0x01) {}
 
-        bool clock(uint16_t &target, bool channel)
-        {
-            bool changed = false;
-            if (timer == 0 && enabled && shift > 0 && !mute)
-            {
-                if (target >= 8 && change < 0x07FF)
-                {
-                    if (down)
-                    {
-                        target -= change - channel;
-                    }
-                    else
-                    {
-                        target += change;
-                    }
-                    changed = true;
-                }
-            }
+        uint16_t clock(uint16_t target);
 
-            if (enabled)
-            {
-                if (timer == 0 || reload)
-                {
-                    timer = period;
-                    reload = false;
-                }
-                else
-                    timer--;
-
-                mute = (target < 8) || (target > 0x7FF);
-            }
-
-            return changed;
-        }
+        bool mute(uint16_t target) const;
     };
+
+    // - Channels ---------------------------------------------------------
 
     struct channel_t {
         virtual void clock(bool quarter_frame, bool half_frame) = 0;
 
-        virtual bool is_enabled() const = 0;
+        [[nodiscard]] virtual bool is_enabled() const = 0;
 
-        virtual double sample(double t) const = 0;
+        [[nodiscard]] virtual double sample(double t) const = 0;
     };
 
     struct pulse_t : public channel_t {
-        const uint8_t channel;
-
         bool enabled = false;
         double dutycycle = 0;
 
         envelope_t envelope;
-        length_t length;
-        sweeper_t sweeper;
+        length_counter_t length_counter;
+        sweep_t sweep;
 
         uint16_t timer = 0;
 
-        explicit pulse_t(uint8_t channel) : channel(channel) {};
+        explicit pulse_t(uint8_t channel) : sweep(channel) {};
 
         void clock(bool quarter_frame, bool half_frame) override;
 
-        bool is_enabled() const override;
+        [[nodiscard]] bool is_enabled() const override;
 
-        double sample(double t) const override;
+        [[nodiscard]] double sample(double t) const override;
 
     };
 
     struct triangle_t : public channel_t {
         bool enabled = false;
 
-        length_t length;
-        bool linear_counter_enabled = false;
-        bool linear_counter_reload = false;
-        uint8_t linear_counter_reload_val = 0;
-        uint8_t linear_counter = 0;
+        length_counter_t length_counter;
+        linear_counter_t linear_counter;
 
         uint16_t timer = 0;
 
         void clock(bool quarter_frame, bool half_frame) override;
 
-        bool is_enabled() const override;
+        [[nodiscard]] bool is_enabled() const override;
 
-        double sample(double t) const override;
+        [[nodiscard]] double sample(double t) const override;
     };
 
     pulse_t pulse1 = pulse_t(0);
